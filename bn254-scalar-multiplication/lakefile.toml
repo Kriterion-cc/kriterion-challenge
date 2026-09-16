@@ -1,6 +1,6 @@
 name = "bn254-scalar-multiplication"
 version = "0.1.0"
-defaultTargets = ["Kriterion", "Tests", "Construction", "Proof", "Submission"]
+defaultTargets = ["Kriterion", "Tests"]
 
 [[require]]
 name = "VCVio"
@@ -21,16 +21,3 @@ roots = ["BN254", "Benchmark", "Cryptography.Assumptions", "Cryptography.Primiti
 name = "Tests"
 srcDir = "tests"
 roots = ["TestSolution"]
-
-[[lean_lib]]
-name = "Construction"
-srcDir = "starter"
-
-[[lean_lib]]
-name = "Proof"
-srcDir = "starter"
-
-[[lean_lib]]
-name = "Submission"
-srcDir = "starter"
-
