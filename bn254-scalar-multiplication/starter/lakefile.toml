@@ -1,0 +1,19 @@
+name = "kriterion-entry"
+version = "0.1.0"
+defaultTargets = ["Construction", "Proof", "Submission"]
+
+[[require]]
+name = "bn254-scalar-multiplication"
+git = "https://github.com/Kriterion-cc/white-hat-challenge"
+rev = "0000000000000000000000000000000000000000"
+subDir = "bn254-scalar-multiplication"
+
+[[lean_lib]]
+name = "Construction"
+
+[[lean_lib]]
+name = "Proof"
+
+[[lean_lib]]
+name = "Submission"
+

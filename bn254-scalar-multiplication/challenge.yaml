@@ -1,0 +1,59 @@
+id: scalar-multiplication
+title: Smallest BN254 scalar multiplication garbled circuit
+submissions_open_at: "2026-09-17T03:00:00Z"
+statement: |
+  Build a computable garbled circuit for fixed-scalar multiplication on BN254.
+  The garbler holds a nonzero scalar. The evaluator supplies affine coordinates.
+  Reject inputs outside `y² = x³ + 3`. Return the scalar multiple for valid inputs.
+
+  Prove these properties in Lean:
+
+  - correct evaluation for every field-element input and random tape, including off-curve rejection;
+  - a constant flat public byte layout that does not reveal the scalar;
+  - 100-bit adaptive privacy in the two-stage game, with work equal to public queries plus one decision step;
+  - one 128-bit Lamport label pair for each bit of `x || y`, with 254 little-endian bits per coordinate; and
+  - encoded labels that satisfy the matching Bitcoin HASH160 locks.
+
+  The adversary selects its input after it sees the public circuit. It can query all public oracles.
+  The simulator receives only the topology, selected input, and output. It uses private coins in each stage.
+  The proof uses the pinned VCV-io random-oracle model and independent uniform permutation families.
+  The curve certificate premises remain explicit. The shared library proves scalar-field primality.
+  The evaluator receives its input separately from exactly 508 labels. The work count excludes local computation.
+  The simulator can program fresh permutation pairs. It must preserve every prior query answer.
+  Authors may use VCV-io primitives, intermediate games, and reductions to prove the fixed obligation.
+  Authors must not change the final security game, public oracle access, or work count.
+
+  Minimize ciphertext size in bytes. Count every construction-dependent public field that evaluation needs.
+  The encoding must preserve the complete public circuit. The byte count must be constant for all scalars and random tapes.
+  The count excludes secret encoding keys, selected input labels, and fixed challenge data.
+library:
+  repo: https://github.com/Kriterion-cc/white-hat-challenge
+  commit: "0000000000000000000000000000000000000000"
+formal: ./bn254-scalar-multiplication/formal
+toolchain: leanprover/lean4:v4.33.1
+mathlib: v4.33.1
+obligation: Kriterion.Solution
+entry: Submission.solution
+properties:
+  - {id: computable_garbling, label: Computable garbling, check: lint}
+  - {id: lamport_compatibility, label: Lamport compatibility}
+  - {id: correctness, label: Correctness}
+  - {id: adaptive_privacy, label: Adaptive privacy}
+references:
+  - label: Public challenge package and starter
+    url: https://github.com/Kriterion-cc/white-hat-challenge/tree/main/bn254-scalar-multiplication
+    description: The formal library, pinned Lean dependencies, local tests, and starter submission.
+  - label: BaBe implementation
+    url: https://github.com/babylonlabs-io/BaBe
+    description: The Rust implementation of BaBe, including the ArgoMAC garbling code and timing tools.
+  - label: BaBe paper source
+    url: https://github.com/babylonlabs-io/BaBe.latex/tree/e2dcf4d540b2708e13cd21090df759051119a116
+    description: The pinned source. preliminaries.tex defines Lamport checks. gc_argomac_new.tex, gc_argomac_base7.tex, gc_privacy.tex, and gc_optimizations.tex define the construction and proof.
+reviewer: {model: openai/gpt-5, effort: low}
+criteria:
+  - {id: ciphertext_bytes, by: eval, fn: Kriterion.Benchmark.ciphertextBytes, unit: bytes, direction: lower}
+order: [ciphertext_bytes]
+baseline:
+  repo: https://github.com/SebastianElvis/argomac-lean
+  commit: "711689cd0253edece8d0c617ad5a7afaa937673e"
+authors: [alice@example.org]

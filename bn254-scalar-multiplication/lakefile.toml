@@ -1,0 +1,36 @@
+name = "bn254-scalar-multiplication"
+version = "0.1.0"
+defaultTargets = ["Kriterion", "Tests", "Construction", "Proof", "Submission"]
+
+[[require]]
+name = "VCVio"
+git = "https://github.com/Verified-zkEVM/VCVio.git"
+rev = "bda0be2da973b1304e016589bb794b22ca299f45"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4"
+rev = "v4.33.1"
+
+[[lean_lib]]
+name = "Kriterion"
+srcDir = "formal"
+roots = ["BN254", "Benchmark", "Cryptography.Assumptions", "Cryptography.Primitives", "Cryptography.Probability", "Cryptography.RandomOracle", "Cryptography.Permutation", "Encoding", "GarbledCircuit", "RandomizedEncoding", "ScalarMultiplication", "Security.AdaptivePrivacy", "Security.Correctness", "Solution"]
+
+[[lean_lib]]
+name = "Tests"
+srcDir = "tests"
+roots = ["TestSolution"]
+
+[[lean_lib]]
+name = "Construction"
+srcDir = "starter"
+
+[[lean_lib]]
+name = "Proof"
+srcDir = "starter"
+
+[[lean_lib]]
+name = "Submission"
+srcDir = "starter"
+
