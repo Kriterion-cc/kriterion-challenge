@@ -41,7 +41,7 @@ properties:
   - {id: adaptive_privacy, label: Adaptive privacy}
 references:
   - label: Public challenge package and starter
-    url: https://github.com/Kriterion-cc/kriterion-challenge/tree/e66a3eaa37c95b66380002a1a3333e140aee28c7/bn254-scalar-multiplication
+    url: https://github.com/Kriterion-cc/kriterion-challenge/tree/4b3db8510ba9ef674b1389d934ce61613bc2ef79/bn254-scalar-multiplication
     description: The formal library, pinned Lean dependencies, local tests, and starter submission.
   - label: BaBe implementation
     url: https://github.com/babylonlabs-io/BaBe
