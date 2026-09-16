@@ -4,8 +4,8 @@ defaultTargets = ["Construction", "Proof", "Submission"]
 
 [[require]]
 name = "bn254-scalar-multiplication"
-git = "https://github.com/Kriterion-cc/white-hat-challenge"
-rev = "0000000000000000000000000000000000000000"
+git = "https://github.com/Kriterion-cc/kriterion-challenge"
+rev = "e66a3eaa37c95b66380002a1a3333e140aee28c7"
 subDir = "bn254-scalar-multiplication"
 
 [[lean_lib]]
@@ -16,4 +16,3 @@ name = "Proof"
 
 [[lean_lib]]
 name = "Submission"
-

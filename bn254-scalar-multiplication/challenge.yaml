@@ -27,8 +27,8 @@ statement: |
   The encoding must preserve the complete public circuit. The byte count must be constant for all scalars and random tapes.
   The count excludes secret encoding keys, selected input labels, and fixed challenge data.
 library:
-  repo: https://github.com/Kriterion-cc/white-hat-challenge
-  commit: "0000000000000000000000000000000000000000"
+  repo: https://github.com/Kriterion-cc/kriterion-challenge
+  commit: "e66a3eaa37c95b66380002a1a3333e140aee28c7"
 formal: ./bn254-scalar-multiplication/formal
 toolchain: leanprover/lean4:v4.33.1
 mathlib: v4.33.1
@@ -41,7 +41,7 @@ properties:
   - {id: adaptive_privacy, label: Adaptive privacy}
 references:
   - label: Public challenge package and starter
-    url: https://github.com/Kriterion-cc/white-hat-challenge/tree/main/bn254-scalar-multiplication
+    url: https://github.com/Kriterion-cc/kriterion-challenge/tree/e66a3eaa37c95b66380002a1a3333e140aee28c7/bn254-scalar-multiplication
     description: The formal library, pinned Lean dependencies, local tests, and starter submission.
   - label: BaBe implementation
     url: https://github.com/babylonlabs-io/BaBe
