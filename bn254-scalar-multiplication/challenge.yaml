@@ -66,6 +66,7 @@ reviewer: {model: openai/gpt-5, effort: low}
 criteria:
   - {id: ciphertext_bytes, by: eval, fn: Kriterion.Benchmark.ciphertextBytes, unit: bytes, direction: lower}
 order: [ciphertext_bytes]
+entry_selection: best_admitted
 baseline:
   repo: https://github.com/SebastianElvis/argomac-lean
   commit: "711689cd0253edece8d0c617ad5a7afaa937673e"
