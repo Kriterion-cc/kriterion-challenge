@@ -1,12 +1,8 @@
-import Construction
+import Proof.Correctness
+import Proof.Privacy
+import Proof.LamportCompatibility
+import Proof.CiphertextSize
 
 /-!
-Put the proofs for the construction in this module and its submodules.
+This module exports the four property roots used by the current baseline.
 -/
-
-namespace Proof
-
--- Add the required proofs here.
-
-end Proof
-
