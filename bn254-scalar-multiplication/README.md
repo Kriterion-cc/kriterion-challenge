@@ -11,6 +11,76 @@ Kriterion uses commit `711689cd0253edece8d0c617ad5a7afaa937673e` for that baseli
 Its [proof map](https://github.com/SebastianElvis/argomac-lean/blob/711689cd0253edece8d0c617ad5a7afaa937673e/Proof/README.md)
 shows one way to organize a large submission.
 
+## Simulator budget
+
+The local obligation requires a finite probabilistic arithmetic machine.
+Its budget is `B(q) = 10q² + 18,378,485q + 8,681,426,770,681` instructions.
+Here `q` counts the oracle queries that the adversary has made.
+The interpreter uses one counter for setup, both stages, and all oracle responses.
+The counter includes the control table and each fair random bit.
+The machine starts with zero registers, zero RAM, and empty binary stacks.
+The machine has no external function calls.
+
+The budget uses the baseline's `SimulatorTotalImplementation.resources` formula:
+
+```text
+n = q + 905765
+draws = 907731 + n
+B(q) = 53997367 + n*(10*n + 16) + 4*draws*(257*256) + draws
+```
+
+Lean proves the expanded formula in `BoundedMachine.budget_expanded`.
+The baseline counts higher-level operations.
+The formula remains a draft limit.
+The arithmetic instruction set removes the need for a bit-level compiler.
+The baseline still needs a closed arithmetic program and a proof of its cost.
+Its existing proof does not establish this machine bound.
+Authors must prove compliance with the new model.
+This budget specifies instructions, not processor time or Turing-machine steps.
+
+The machine has sixteen 256-bit registers and RAM with 256-bit addresses.
+The machine also has four binary stacks for its bit protocol.
+Each instruction costs one unit.
+The fixed instructions support these operations:
+
+- The word instructions perform arithmetic modulo `2^256`, bit operations, shifts, and comparison.
+- The field instructions perform addition, subtraction, multiplication, and inversion in either BN254 field.
+- The group instruction adds two BN254 points. It rejects invalid point encodings.
+- The memory instructions read or write one RAM word. The constant instruction writes one register.
+- The control instructions branch or halt.
+- The stack instructions push or pop one bit. The coin instruction samples one fair bit.
+
+The program counter has at most 256 bits.
+Each control-table entry costs one unit before execution.
+Each entry contains a fixed number of bounded operands.
+The instruction set contains no arbitrary function or distribution values.
+Each request starts at instruction zero.
+Stack zero receives the request.
+Stack three returns the response.
+The registers, RAM, and stacks one and two retain private state between requests.
+[AdaptivePrivacy.lean](formal/Security/AdaptivePrivacy.lean) fixes the request tags and bit order.
+The protocol passes only public data, the selected input, and its output.
+
+The interpreter aborts on budget exhaustion or an incorrect reply length.
+The privacy proof gives one allowance to both simulation error and implementation error.
+The allowance is `(Q + 1) / 2^100`.
+Here `Q` is the sum of the adversary's two declared query budgets.
+The adversary's local computation remains unrestricted.
+`adaptivePrivacyTransfer` proves the resulting real-to-machine bound.
+
+The revision retains the existing circuit types and byte encoding.
+The machine must produce the complete canonical public bytes.
+The decoder supplies only the adversary's public view.
+The machine never receives the decoded value.
+The protocol represents each finite oracle index by its fixed enumeration.
+The single `AdaptivePrivacy` property requires both the abstract simulator and its bounded machine.
+The older `ConcreteAdaptivePrivacy` predicate remains an abstract game bound for proof reuse.
+`Solution` checks only the combined `AdaptivePrivacy` property.
+Old submissions need a new bounded simulator proof.
+
+The library and starter pins still select the previous published obligation.
+The publisher must update both pins before deployment.
+
 ## Build the public library
 
 Install `elan`, and then run these commands:
@@ -19,9 +89,16 @@ Install `elan`, and then run these commands:
 cd bn254-scalar-multiplication
 lake exe cache get
 lake build Kriterion Tests
+lake test
 ```
 
 The project uses Lean 4.33.1, Mathlib 4.33.1, and a pinned VCV-io revision.
+The `lake test` command also checks the ArgoMAC baseline from `challenge.yaml`.
+The test uses the local library and checks `Submission.solution` for disallowed axioms.
+The test requires Git, Python 3, and network access.
+The baseline must pass this test before the publisher updates either dependency pin.
+The pinned baseline currently fails the revised obligation.
+This revision is not ready for deployment.
 
 ## Start a submission
 

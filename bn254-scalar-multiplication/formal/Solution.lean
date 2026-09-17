@@ -22,7 +22,7 @@ noncomputable def uniformRandomTape (Randomness : Type) [Fintype Randomness]
   Cryptography.uniformTape Randomness witness
 
 /-- A submission supplies executable data and proofs of the fixed challenge rules.
-The existential simulator remains in `Prop`, so its PMFs need no executable code.
+The privacy proof must supply a finite machine for the complete simulator.
 Authors may use VCV-io lemmas and reductions to prove these exact fields. -/
 structure Solution where
   /-- These finite indices name independent permutations in `preliminaries.tex`, `def:pRPM`. -/
@@ -66,16 +66,13 @@ structure Solution where
     @checkedScalarMultiplication field group scalar.value input
   /-- Correctness covers every input and tape, including rejection. See `def:garbling-scheme`. -/
   perfectCorrectness : ∀ field group, GarbledCircuit.PerfectCorrectness (scheme field group) evaluationOracle
-  /-- The simulator precedes every adversary. See `preliminaries.tex`, `def:garbling-scheme`.
-  Its first stage receives only the fixed byte count. Its second stage receives the input and output.
-  The challenge charges public queries plus one decision step and requires 100 bits. -/
-  adaptivePrivacy : ∀ field group,
-    ∃ simulator : GarbledCircuit.Simulator BN254.AffineInput (Option (@BN254.Point field)) Public
-        GarbledCircuit.LamportSignature Nat State,
-      GarbledCircuit.OracleSimulation simulator idealOracle idealView ∧
-      GarbledCircuit.ConcreteAdaptivePrivacy (Aux := Unit)
-        (scheme field group) (fun _ => ciphertextBytes) simulator
-        (@uniformRandomTape Randomness (@Fintype.ofFinite Randomness randomnessFinite) randomness)
-        (Cryptography.publicHandler evaluationOracle) idealOracle 100
+  /-- The same machine serves every adversary and scalar within the fixed budget. -/
+  adaptivePrivacy : ∀ (field : BN254.FieldCertificate) (group : @BN254.GroupCertificate field),
+    letI := field
+    letI := @Fintype.ofFinite FixedIndex fixedFinite
+    letI := @Fintype.ofFinite EncIndex encFinite
+    GarbledCircuit.AdaptivePrivacy (Aux := Unit) (scheme field group) encoding ciphertextBytes
+      (@uniformRandomTape Randomness (@Fintype.ofFinite Randomness randomnessFinite) randomness)
+      (Cryptography.publicHandler evaluationOracle) idealOracle idealView
 
 end Kriterion

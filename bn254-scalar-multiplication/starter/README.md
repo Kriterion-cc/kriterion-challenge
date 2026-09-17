@@ -19,3 +19,11 @@ The hosted verifier rejects `sorry`, axioms, opaque definitions, and noncomputab
 
 This proof layout follows the current ArgoMAC baseline. You can add nested modules
 or change the internal layout. Keep `Proof.lean` as the exported proof root.
+
+The local challenge now requires a bounded simulator machine.
+The circuit types and byte encoding remain unchanged.
+Authors must supply the new privacy proof for the bounded simulator.
+The current dependency pin still selects the previous published obligation.
+The publisher must update this pin before authors can target the revision.
+
+The [paper corrections](PAPER_CORRECTIONS.md) explain the coordinate errors.
