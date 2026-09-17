@@ -5,7 +5,7 @@ defaultTargets = ["Construction", "Proof", "Submission"]
 [[require]]
 name = "bn254-scalar-multiplication"
 git = "https://github.com/Kriterion-cc/kriterion-challenge"
-rev = "e66a3eaa37c95b66380002a1a3333e140aee28c7"
+rev = "88863ae0d8a46ab2a76ed22ab14b3a4c34cdac46"
 subDir = "bn254-scalar-multiplication"
 
 [[lean_lib]]

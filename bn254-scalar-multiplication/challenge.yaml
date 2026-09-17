@@ -41,6 +41,15 @@ properties:
   - {id: correctness, label: Correctness}
   - {id: adaptive_privacy, label: Adaptive privacy}
 references:
+  - label: Kriterion CLI downloads
+    url: https://kriterion.cc/download
+    description: Download a versioned CLI file and verify its SHA-256 checksum.
+  - label: Kriterion participant documentation
+    url: https://kriterion.cc/docs
+    description: Read the rendered tutorials, how-to guides, reference, and explanation pages.
+  - label: Kriterion participant CLI and API documentation
+    url: https://github.com/Kriterion-cc/kriterion-cli
+    description: Inspect the public source, Diátaxis Markdown, OpenAPI specification, and past releases.
   - label: Public challenge package and starter
     url: https://github.com/Kriterion-cc/kriterion-challenge/tree/main/bn254-scalar-multiplication
     description: The formal library, pinned Lean dependencies, local tests, and starter submission.

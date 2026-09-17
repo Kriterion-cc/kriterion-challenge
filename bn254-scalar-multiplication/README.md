@@ -45,6 +45,31 @@ The Kriterion verifier rejects the placeholder and all other unproved axioms.
 
 Before submission, push the repository and use its full 40-character commit hash.
 
+## Submit to Kriterion
+
+Choose one of these public resources:
+
+- [Download the CLI and verify its checksum](https://kriterion.cc/download)
+- [Read the first-submission guide](https://kriterion.cc/docs/tutorials/first-submission)
+- [Inspect the CLI source and past releases](https://github.com/Kriterion-cc/kriterion-cli)
+
+Set `KRITERION_TOKEN`.
+The token is available from the Settings page on `https://kriterion.cc`.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Kriterion-cc/kriterion-cli/v0.1.0/kriterion -o kriterion
+chmod +x kriterion
+export KRITERION_TOKEN='<token-from-settings>'
+REPO_URL='https://github.com/you/project'
+COMMIT=$(git rev-parse HEAD)
+./kriterion submit \
+  --challenge scalar-multiplication \
+  --repo "$REPO_URL" \
+  --commit "$COMMIT"
+```
+
+The hosted verifier runs the final layout, build, obligation, axiom, and computability checks.
+
 ## Verification rules
 
 The verifier imports only `Construction`, `Proof`, and `Submission` from the submitted repository.
