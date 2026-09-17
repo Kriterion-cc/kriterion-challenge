@@ -45,6 +45,11 @@ name = "Proof"
 
 [[lean_lib]]
 name = "Submission"
+
+[[lean_lib]]
+name = "BaselineTests"
+srcDir = "tests"
+roots = ["AdaptivePrivacy"]
 '''
     (ENTRY / "lakefile.toml").write_text(config)
     (ENTRY / "lean-toolchain").write_text((ROOT / "lean-toolchain").read_text())
@@ -67,7 +72,7 @@ run_cmd do
 '''
     (ENTRY / "BaselineAudit.lean").write_text(audit)
     run("lake", "update")
-    run("lake", "build", "Construction", "Proof", "Submission")
+    run("lake", "build", "Construction", "Proof", "Submission", "BaselineTests")
     run("lake", "env", "lean", "BaselineAudit.lean")
     print(f"The baseline {commit} satisfies the local Kriterion.Solution obligation.")
 

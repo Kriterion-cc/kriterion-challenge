@@ -95,6 +95,7 @@ lake test
 The project uses Lean 4.33.1, Mathlib 4.33.1, and a pinned VCV-io revision.
 The `lake test` command also checks the ArgoMAC baseline from `challenge.yaml`.
 The test uses the local library and checks `Submission.solution` for disallowed axioms.
+The test also compiles the baseline acceptance tests in `tests/AdaptivePrivacy.lean`.
 The test requires Git, Python 3, and network access.
 The baseline must pass this test before the publisher updates either dependency pin.
 The pinned baseline currently fails the revised obligation.
