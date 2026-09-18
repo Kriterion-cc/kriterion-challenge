@@ -15,7 +15,9 @@ def main():
     entry = (ROOT.parent / baseline.group(1)).resolve()
     for command in (
         ["lake", "update"],
-        ["lake", "build", "Construction", "Proof", "Submission", "BaselineTests"],
+        ["lake", "build", "Construction", "Proof"],
+        ["lake", "env", "lean", "tests/ProofAudit.lean"],
+        ["lake", "build", "Submission", "BaselineTests"],
         ["lake", "env", "lean", "tests/AxiomAudit.lean"],
     ):
         subprocess.run(command, cwd=entry, check=True)

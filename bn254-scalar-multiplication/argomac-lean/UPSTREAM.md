@@ -13,3 +13,10 @@ The draft does not yet satisfy the complete adaptive privacy obligation.
 
 The copy excludes Git metadata, dependency downloads, and build output.
 The local Lake configuration uses the challenge library in `..`.
+
+The source check covers all 956 source files from the previous checkout.
+The local copy contains every file from that set.
+The local copy also contains the later proof fixes.
+The previous `BudgetAudit.lean` is now `tests/ProofAudit.lean`.
+The memory layout proofs from `LayoutCheck.lean` already appear in `Proof/Privacy/Simulator/Arithmetic/MemoryLayout.lean`.
+The protocol checks from `ProtocolCheck.lean` already appear in `Proof/Privacy/Simulator/Arithmetic/ParsedProgramSource.lean`.
