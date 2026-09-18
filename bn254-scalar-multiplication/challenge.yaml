@@ -21,7 +21,7 @@ statement: |
   Each instruction has a fixed number of bounded operands. The program counter has at most 256 bits.
   The instruction set accepts no Lean callbacks or arbitrary probability distributions.
   The machine pays one unit per instruction and one unit per control-table entry.
-  The total budget after q adversary oracle queries is B(q) = 10*q^2 + 18378485*q + 8681426770681 units.
+  The total budget after q adversary oracle queries is B(q) = 64*q^2 + 134217728*q + 70368744177664 units.
   One counter covers setup, both simulator stages, private coins, and all oracle responses.
   The machine starts with zero registers, zero RAM, and empty binary stacks. It has no external function calls or free advice tables.
   The fixed protocol supplies public inputs as bits. The machine produces the complete canonical public bytes.
@@ -30,8 +30,8 @@ statement: |
   Authors must prove that the real-to-ideal advantage plus the ideal-to-machine advantage is at most (Q + 1) / 2^100.
   Here Q is the sum of the adversary's two declared oracle-query budgets. The adversary's local computation remains unrestricted.
   This bound includes sampling approximation and abort error. One machine must work for every scalar and adversary.
-  The draft numerical budget comes from the original baseline's resource formula. Its original units count higher-level operations.
-  The baseline needs a new proof for this instruction model. Its existing resource theorem does not prove compliance.
+  The numerical budget covers the local ArgoMAC baseline's complete arithmetic phase sum.
+  Lean checks that cost bound. The complete machine-to-ideal simulation proof remains open.
   The local ArgoMAC baseline does not yet satisfy this revision.
   The proof uses the pinned VCV-io probability library and independent uniform permutation families. The simulator may program fresh pairs.
   The curve certificate premises remain explicit. The shared library proves scalar-field primality.

@@ -10,7 +10,7 @@ This revision does not yet satisfy the revised challenge.
 `Submission.lean` has two open proof goals.
 The first goal needs a complete simulator machine.
 The second goal needs the combined adaptive privacy bound.
-The challenge budget remains provisional.
+The challenge budget follows the checked arithmetic phase sum.
 The [challenge draft](https://github.com/Kriterion-cc/kriterion-challenge/pull/1) defines the revised obligation.
 
 The construction uses 92 digits and three shared permutation slots.
@@ -84,8 +84,8 @@ These component budgets do not establish the complete simulator budget.
 
 The source simulator samples 91 free points and 92 nonzero scales.
 Its existing resource bounds count higher-level operations.
-Those bounds do not prove the revised arithmetic instruction budget.
-The complete proof also needs RAM oracle tables, canonical serialization, and an implementation-error bound.
+`CompiledPhaseCost.lean` proves the complete arithmetic phase sum fits the challenge budget.
+The complete proof still needs the final machine-to-ideal coupling.
 
 ## Validation
 

@@ -14,28 +14,27 @@ Its [source record](argomac-lean/UPSTREAM.md) identifies the original repository
 ## Simulator budget
 
 The local obligation requires a finite probabilistic arithmetic machine.
-Its budget is `B(q) = 10q² + 18,378,485q + 8,681,426,770,681` instructions.
+Its budget is `B(q) = 64q² + 134,217,728q + 70,368,744,177,664` instructions.
 Here `q` counts the oracle queries that the adversary has made.
 The interpreter uses one counter for setup, both stages, and all oracle responses.
 The counter includes the control table and each fair random bit.
 The machine starts with zero registers, zero RAM, and empty binary stacks.
 The machine has no external function calls.
 
-The budget uses the baseline's `SimulatorTotalImplementation.resources` formula:
+The budget uses the local baseline's fixed arithmetic instructions.
+The [complete phase bound](argomac-lean/Proof/Privacy/Simulator/Arithmetic/CompiledPhaseCost.lean)
+covers setup, both public query phases, the online phase, and the control table.
+Lean proves that their sum fits this polynomial:
 
 ```text
-n = q + 905765
-draws = 907731 + n
-B(q) = 53997367 + n*(10*n + 16) + 4*draws*(257*256) + draws
+B(q) = 64*q^2 + 2^27*q + 2^46
 ```
 
-Lean proves the expanded formula in `BoundedMachine.budget_expanded`.
-The baseline counts higher-level operations.
-The formula remains a draft limit.
-The arithmetic instruction set removes the need for a bit-level compiler.
-The baseline defines a fixed arithmetic program.
-Its complete simulation proof and total cost proof remain open.
-Its existing proof does not establish this machine bound.
+The proof uses the query count at each phase.
+The sampler uses at most 256 attempts for each bounded draw.
+The [sampling bound](argomac-lean/Proof/Privacy/Simulator/Arithmetic/SharedFiniteSourceDecision.lean)
+accounts for sampling failures in the privacy allowance.
+The complete link between the machine and the ideal experiment remains open.
 Authors must prove compliance with the new model.
 This budget specifies instructions, not processor time or Turing-machine steps.
 

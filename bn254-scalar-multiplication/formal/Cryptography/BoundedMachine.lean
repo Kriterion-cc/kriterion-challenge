@@ -2,17 +2,13 @@ import Cryptography.Primitives
 
 namespace Kriterion.Cryptography.BoundedMachine
 
-/-- This draft budget reuses the baseline formula in machine-instruction units.
-The source is `SimulatorTotalImplementation.resources` at ArgoMAC commit
-`711689cd0253edece8d0c617ad5a7afaa937673e`. The unit conversion remains unproved. -/
+/-- This budget covers the complete ArgoMAC arithmetic machine phase sum.
+`compiledPhaseCost_polynomial` in `CompiledPhaseCost.lean` proves the local baseline bound. -/
 def budget (queries : Nat) : Nat :=
-  let n := queries + 905765
-  let draws := 907731 + n
-  53997367 + n * (10 * n + 16) + 4 * (draws * (257 * 256)) + draws
+  64 * queries ^ 2 + 2 ^ 27 * queries + 2 ^ 46
 
-theorem budget_expanded (q : Nat) : budget q = 10 * q ^ 2 + 18378485 * q + 8681426770681 := by
-  unfold budget
-  ring
+theorem budget_expanded (q : Nat) : budget q = 64 * q ^ 2 + 134217728 * q + 70368744177664 := by
+  norm_num [budget]
 
 /-- Each data word has 256 bits. Each register index has four bits. -/
 abbrev Word := BitVec 256

@@ -3,6 +3,24 @@ import Lean
 
 run_cmd do
   for name in #[
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledProgram_private,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledPhaseCost_budget,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledMachine_onlineValidResponse,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledMachine_onlineNullResponse,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.sharedAdaptivePrivacy_of_finiteSource,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.sharedWireFiniteDecision_phases,
+
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledSetupJoint_parsed,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledSetupJoint_source,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledSetupJoint_memory,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledSetupJoint_cost,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.offlineSchedule_injective,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.onlineSamplingCoin_source,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledProgram_coupling,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledPublicCost_polynomial,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.onlineMachine_validCost,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.onlineMachine_nullCost,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.sharedFiniteSourceDecision_allowance,
       `Kriterion.ArgoMAC.ArithmeticSimulator.storedForwardSamples_fixedHistory,
       `Kriterion.ArgoMAC.ArithmeticSimulator.storedInverseSamples_fixedHistory,
 
