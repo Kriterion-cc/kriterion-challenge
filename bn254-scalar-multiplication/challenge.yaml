@@ -37,11 +37,10 @@ statement: |
   The curve certificate premises remain explicit. The shared library proves scalar-field primality.
   The objective minimizes ciphertext bytes. The encoding must preserve every construction-dependent public field that evaluation needs.
   The byte count excludes secret encoding keys, selected input labels, and fixed challenge data.
-  The local Lean obligation enforces this budget. The published library pin still points to the previous obligation.
-  The publisher must update the library pin before the hosted verifier accepts this revision.
+  The local Lean obligation and the published library pin enforce this budget.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
-  commit: "e66a3eaa37c95b66380002a1a3333e140aee28c7"
+  commit: "e8ee38e77c2abc19e4efd14b44d11f9be2a3fc91"
 formal: ./bn254-scalar-multiplication/formal
 toolchain: leanprover/lean4:v4.33.1
 mathlib: v4.33.1
@@ -66,8 +65,8 @@ references:
     url: https://github.com/Kriterion-cc/kriterion-challenge/tree/main/bn254-scalar-multiplication
     description: The formal library, pinned Lean dependencies, local tests, and starter submission.
   - label: Local ArgoMAC baseline proof map
-    url: https://github.com/SebastianElvis/kriterion-challenge/blob/SebastianElvis/check-liucheng-solution/bn254-scalar-multiplication/argomac-lean/Proof/README.md
-    description: The baseline proof structure, security review, sampling laws, and compiler measurements.
+    url: https://github.com/Kriterion-cc/kriterion-challenge/blob/e8ee38e77c2abc19e4efd14b44d11f9be2a3fc91/bn254-scalar-multiplication/argomac-lean/Proof/README.md
+    description: The baseline proof structure, shared-slot privacy proof, arithmetic cost bound, and acceptance tests.
   - label: BaBe implementation
     url: https://github.com/babylonlabs-io/BaBe
     description: The Rust implementation of BaBe, including the ArgoMAC garbling code and timing tools.

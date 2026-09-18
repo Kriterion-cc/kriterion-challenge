@@ -78,9 +78,8 @@ The older `ConcreteAdaptivePrivacy` predicate remains an abstract game bound for
 `Solution` checks only the combined `AdaptivePrivacy` property.
 Old submissions need a new bounded simulator proof.
 
-The published library pin still selects the previous obligation.
-The local starter uses the local library.
-The publisher must update the published library pin before deployment.
+The published library pin selects the checked revision of this obligation.
+The local starter uses the same library from this repository.
 
 ## Build the public library
 
