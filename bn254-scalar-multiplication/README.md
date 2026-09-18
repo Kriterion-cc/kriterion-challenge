@@ -6,10 +6,10 @@ The `formal/` directory defines `Kriterion.Solution` and all fixed proof rules.
 The `challenge.yaml` file contains the complete challenge definition.
 The `starter/` directory contains the required submission layout.
 
-The public baseline is [ArgoMAC](https://github.com/SebastianElvis/argomac-lean/tree/711689cd0253edece8d0c617ad5a7afaa937673e).
-Kriterion uses commit `711689cd0253edece8d0c617ad5a7afaa937673e` for that baseline.
-Its [proof map](https://github.com/SebastianElvis/argomac-lean/blob/711689cd0253edece8d0c617ad5a7afaa937673e/Proof/README.md)
-shows one way to organize a large submission.
+The repository contains the complete [ArgoMAC baseline](argomac-lean/README.md).
+Its [proof map](argomac-lean/Proof/README.md) describes the proof structure.
+The local baseline uses the local challenge library.
+Its [source record](argomac-lean/UPSTREAM.md) identifies the original repository.
 
 ## Simulator budget
 
@@ -33,7 +33,8 @@ Lean proves the expanded formula in `BoundedMachine.budget_expanded`.
 The baseline counts higher-level operations.
 The formula remains a draft limit.
 The arithmetic instruction set removes the need for a bit-level compiler.
-The baseline still needs a closed arithmetic program and a proof of its cost.
+The baseline defines a fixed arithmetic program.
+Its complete simulation proof and total cost proof remain open.
 Its existing proof does not establish this machine bound.
 Authors must prove compliance with the new model.
 This budget specifies instructions, not processor time or Turing-machine steps.
@@ -93,12 +94,13 @@ lake test
 ```
 
 The project uses Lean 4.33.1, Mathlib 4.33.1, and a pinned VCV-io revision.
-The `lake test` command also checks the ArgoMAC baseline from `challenge.yaml`.
+The `lake test` command also checks the ArgoMAC baseline in `argomac-lean/`.
 The test uses the local library and checks `Submission.solution` for disallowed axioms.
 The test also compiles the baseline acceptance tests in `tests/AdaptivePrivacy.lean`.
-The test requires Git, Python 3, and network access.
-The baseline must pass this test before the publisher updates either dependency pin.
-The pinned baseline currently fails the revised obligation.
+The test requires Python 3.
+The first dependency download requires network access.
+The baseline must pass this test before deployment.
+The local baseline currently fails the revised obligation.
 This revision is not ready for deployment.
 
 ## Start a submission
