@@ -3,6 +3,11 @@ import Lean
 
 run_cmd do
   for name in #[
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledNullJoint_coupling,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.onlineValidGateJoint_keyProtocol,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.onlineLinkMemory_sharedSource,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.onlineValidPrepared_pointMemory,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.onlinePreparedMemory_curveRecord,
       `Kriterion.ArgoMAC.ArithmeticSimulator.compiledAdaptivePrivacy_of_onlineLaw,
       `Kriterion.ArgoMAC.ArithmeticSimulator.compiledIdealGame_finiteSource,
       `Kriterion.ArgoMAC.ArithmeticSimulator.compiledOnlineJoint_ready,
