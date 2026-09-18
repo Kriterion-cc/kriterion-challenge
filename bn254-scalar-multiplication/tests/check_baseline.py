@@ -24,7 +24,7 @@ def main():
     manifest = json.loads((ROOT / "lake-manifest.json").read_text())
     packages = [{**package, "type": "path", "dir": str(ROOT / ".lake/packages" / package["name"] /
                  (package.get("subDir") or ""))} for package in manifest["packages"]]
-    packages.append({"type": "path", "name": manifest["name"], "dir": str(ROOT),
+    packages.append({"type": "path", "name": manifest["name"], "dir": str(ROOT), "inherited": False,
                      "manifestFile": "lake-manifest.json", "configFile": "lakefile.toml"})
     with tempfile.NamedTemporaryFile(mode="w", suffix=".json") as overrides:
         json.dump({"version": manifest["version"], "packages": packages}, overrides)
