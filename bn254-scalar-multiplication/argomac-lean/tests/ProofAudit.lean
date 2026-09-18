@@ -3,6 +3,14 @@ import Lean
 
 run_cmd do
   for name in #[
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledChosenProtocol,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.compiledDecisionProtocol,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.curveDirectiveAt_schedule,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.pointDirectiveAt_schedule,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.curveGateCode_typed,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.pointGateCode_private,
+      `Kriterion.ArgoMAC.ArithmeticSimulator.encLinkProgram_sharedCutoff,
+
       `Kriterion.ArgoMAC.ArithmeticSimulator.compiledProgram_private,
       `Kriterion.ArgoMAC.ArithmeticSimulator.compiledPhaseCost_budget,
       `Kriterion.ArgoMAC.ArithmeticSimulator.compiledMachine_onlineValidResponse,

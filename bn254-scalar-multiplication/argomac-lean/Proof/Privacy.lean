@@ -1,3 +1,9 @@
+import Proof.Privacy.Simulator.Arithmetic.CompiledChosenProtocol
+import Proof.Privacy.Simulator.Arithmetic.CompiledDecisionProtocol
+import Proof.Privacy.Simulator.Arithmetic.GateDirectiveSchedule
+import Proof.Privacy.Simulator.Arithmetic.GateCodeTyped
+import Proof.Privacy.Simulator.Arithmetic.GatePrivateBounds
+import Proof.Privacy.Simulator.Arithmetic.EncLinkSharedCutoff
 import Proof.Privacy.Simulator.Arithmetic.CompiledProgramPrivate
 import Proof.Privacy.Simulator.Arithmetic.CompiledBudget
 import Proof.Privacy.Simulator.Arithmetic.CompiledOnlineProtocol
