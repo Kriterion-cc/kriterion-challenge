@@ -149,7 +149,7 @@ references:
     url: https://kriterion.cc/download
     description: The download page provides platform binaries and checksum commands.
   - label: Challenge package
-    url: https://github.com/Kriterion-cc/kriterion-challenge/tree/875a8a5e0485cf9af25129227dd062c1fdb0fda5/bn254-scalar-multiplication
+    url: https://github.com/Kriterion-cc/kriterion-challenge/tree/8ce066ae1436d3a876d1664a5dacd88d516c35a5/bn254-scalar-multiplication
     description: The package contains the formal library, build configuration, tests, and baseline submodule.
   - label: Formal solution requirements
     url: https://github.com/Kriterion-cc/kriterion-challenge/blob/3322a36abd962aa5960e65d7f2d8b9f72478d1e3/bn254-scalar-multiplication/formal/Solution.lean
