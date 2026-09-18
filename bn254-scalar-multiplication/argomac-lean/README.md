@@ -6,10 +6,8 @@ The Kriterion verifier reads `Submission.solution`.
 
 ## Status
 
-This revision does not yet satisfy the revised challenge.
-`Submission.lean` has two open proof goals.
-The first goal needs a complete simulator machine.
-The second goal needs the combined adaptive privacy bound.
+`Submission.solution` satisfies the revised challenge.
+Its adaptive privacy proof includes the concrete arithmetic simulator and its total cost.
 The challenge budget follows the checked arithmetic phase sum.
 The [challenge draft](https://github.com/Kriterion-cc/kriterion-challenge/pull/1) defines the revised obligation.
 
@@ -70,7 +68,7 @@ The shared collision checks detect domain and range conflicts between the role n
 The shared assignment theorem gives the exact permutation probability for both branches.
 `SharedOracleProgram.lean` proves the source program's online distribution law.
 The shared adaptive privacy proof and its axiom audit pass.
-The complete arithmetic machine proof remains open.
+The complete arithmetic machine proof also passes Lean.
 The older source transport proofs still assume five independent permutation roles.
 
 `Construction/Simulator/` contains fixed arithmetic machine components.
@@ -80,12 +78,13 @@ Its program table costs 13 additional units.
 The bounded sampler has an exact retry law and a failure bound of `2^-256`.
 The RAM caller preserves its saved address across the sampler call.
 Its 256-attempt budget is at most 461,855 units, including its program table.
-These component budgets do not establish the complete simulator budget.
+The complete simulator bound also includes every later phase and public query.
 
 The source simulator samples 91 free points and 92 nonzero scales.
 Its existing resource bounds count higher-level operations.
 `CompiledPhaseCost.lean` proves the complete arithmetic phase sum fits the challenge budget.
-The complete proof still needs the final machine-to-ideal coupling.
+`CompiledOnlineCoupling.lean` proves the complete machine-to-ideal connection.
+`compiledAdaptivePrivacy` proves the combined challenge property.
 
 ## Validation
 
@@ -98,8 +97,8 @@ lake build Construction Proof
 lake build Submission
 ```
 
-The first command checks the exported construction and proof modules.
-The second command remains a required acceptance test.
-The current second command fails at the two open adaptive privacy goals.
+The build commands check the exported proofs and the complete submission.
+The challenge also runs these checks through `lake test`.
+The complete `lake test` command passes, including the baseline tests and axiom audits.
 The axiom checks permit only `propext`, `Classical.choice`, and `Quot.sound`.
 No completed proof uses an assumed adaptive privacy theorem.

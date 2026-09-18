@@ -1,3 +1,5 @@
+import Proof.Privacy.Simulator.Arithmetic.CompiledOnlineCoupling
+import Proof.Privacy.Simulator.Arithmetic.OnlineConcreteSource
 import Proof.Privacy.Simulator.Arithmetic.CompiledNullProtocol
 import Proof.Privacy.Simulator.Arithmetic.OnlineValidGateParser
 import Proof.Privacy.Simulator.Arithmetic.OnlineLinkSharedSource

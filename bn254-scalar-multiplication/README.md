@@ -34,7 +34,7 @@ The proof uses the query count at each phase.
 The sampler uses at most 256 attempts for each bounded draw.
 The [sampling bound](argomac-lean/Proof/Privacy/Simulator/Arithmetic/SharedFiniteSourceDecision.lean)
 accounts for sampling failures in the privacy allowance.
-The complete link between the machine and the ideal experiment remains open.
+Lean proves the complete link between the machine and the ideal experiment.
 Authors must prove compliance with the new model.
 This budget specifies instructions, not processor time or Turing-machine steps.
 
@@ -100,14 +100,13 @@ The test also compiles the baseline acceptance tests in `tests/AdaptivePrivacy.l
 The test requires Python 3.
 The first dependency download requires network access.
 The baseline must pass this test before deployment.
-The local baseline currently fails the revised obligation.
-This revision is not ready for deployment.
+`Submission.solution` proves the revised obligation with the concrete bounded machine.
 
 ## Start a submission
 
 Use `argomac-lean/` as the source for a new submission.
 The starter contains the ArgoMAC implementation.
-Its final adaptive privacy proof remains incomplete.
+Its adaptive privacy proof includes the complete arithmetic simulator.
 The local Lake configuration uses the challenge library in `..`.
 A separate submission repository must replace that local dependency with the published challenge pin.
 
@@ -123,7 +122,7 @@ lake exe cache get
 lake build
 ```
 
-The current starter build fails at its open adaptive privacy goals.
+The starter proves every field of `Kriterion.Solution`.
 The Kriterion verifier rejects incomplete proofs and disallowed axioms.
 
 Before submission, push the repository and use its full 40-character commit hash.

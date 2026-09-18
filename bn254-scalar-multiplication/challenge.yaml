@@ -31,8 +31,8 @@ statement: |
   Here Q is the sum of the adversary's two declared oracle-query budgets. The adversary's local computation remains unrestricted.
   This bound includes sampling approximation and abort error. One machine must work for every scalar and adversary.
   The numerical budget covers the local ArgoMAC baseline's complete arithmetic phase sum.
-  Lean checks that cost bound. The complete machine-to-ideal simulation proof remains open.
-  The local ArgoMAC baseline does not yet satisfy this revision.
+  Lean checks that cost bound and the complete machine-to-ideal simulation proof.
+  The local ArgoMAC baseline proves the revised obligation.
   The proof uses the pinned VCV-io probability library and independent uniform permutation families. The simulator may program fresh pairs.
   The curve certificate premises remain explicit. The shared library proves scalar-field primality.
   The objective minimizes ciphertext bytes. The encoding must preserve every construction-dependent public field that evaluation needs.

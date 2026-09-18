@@ -9,7 +9,7 @@ This repository now records further changes in the same commits as the challenge
 
 The `baseline` field in `../challenge.yaml` selects this directory.
 The local acceptance test uses this directory.
-The draft does not yet satisfy the complete adaptive privacy obligation.
+`Submission.solution` proves the complete adaptive privacy obligation.
 
 The copy excludes Git metadata, dependency downloads, and build output.
 The local Lake configuration uses the challenge library in `..`.

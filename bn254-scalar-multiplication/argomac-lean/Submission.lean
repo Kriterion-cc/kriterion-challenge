@@ -2,6 +2,8 @@ import Solution
 import Construction
 import Proof
 
+set_option maxRecDepth 4096
+
 namespace Submission
 open Kriterion Kriterion.BN254 Kriterion.ArgoMAC
 
@@ -33,7 +35,9 @@ def solution : Kriterion.Solution := {
     intro field group
     letI := field
     letI := group
-    refine ⟨Shared.Simulator.wireSimulator, ?_, Shared.Simulator.wire_oracleSimulation, ?_⟩
+    convert ArithmeticSimulator.compiledAdaptivePrivacy (Aux := Unit)
+      (Shared.Randomness.ofLegacy (Seed.randomness 0)) using 1
+    rfl
 }
 
 end Submission
