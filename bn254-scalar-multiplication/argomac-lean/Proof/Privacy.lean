@@ -1,3 +1,9 @@
+import Proof.Privacy.Simulator.Arithmetic.CompiledAdaptivePrivacy
+import Proof.Privacy.Simulator.Arithmetic.CompiledOnlineReady
+import Proof.Privacy.Simulator.Arithmetic.OnlineGateJointMachine
+import Proof.Privacy.Simulator.Arithmetic.OnlineGateJointSource
+import Proof.Privacy.Simulator.Arithmetic.EncLinkSharedMemory
+import Proof.Privacy.Simulator.Arithmetic.EncLinkCompleteFrame
 import Proof.Privacy.Simulator.Arithmetic.CompiledChosenProtocol
 import Proof.Privacy.Simulator.Arithmetic.CompiledDecisionProtocol
 import Proof.Privacy.Simulator.Arithmetic.GateDirectiveSchedule
