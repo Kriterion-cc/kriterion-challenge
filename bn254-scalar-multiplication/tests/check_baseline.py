@@ -1,20 +1,24 @@
 """This test checks the local ArgoMAC baseline against the challenge library."""
 
 from pathlib import Path
+import re
 import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ENTRY = ROOT / "argomac-lean"
 
 
 def main():
+    baseline = re.search(r"^baseline:\n  path: (\S+)$", (ROOT / "challenge.yaml").read_text(), re.M)
+    if baseline is None:
+        raise SystemExit("The challenge must select a local baseline path.")
+    entry = (ROOT.parent / baseline.group(1)).resolve()
     for command in (
         ["lake", "update"],
         ["lake", "build", "Construction", "Proof", "Submission", "BaselineTests"],
         ["lake", "env", "lean", "tests/AxiomAudit.lean"],
     ):
-        subprocess.run(command, cwd=ENTRY, check=True)
+        subprocess.run(command, cwd=entry, check=True)
     print("The local ArgoMAC baseline satisfies the Kriterion.Solution obligation.")
 
 

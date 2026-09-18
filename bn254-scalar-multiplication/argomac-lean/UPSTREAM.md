@@ -7,7 +7,7 @@ The last source commit before this copy is `6544216f4c50bf846775fa27f1556bdf7e06
 This copy also includes the pending proof changes from that checkout.
 This repository now records further changes in the same commits as the challenge.
 
-The `baseline` field in `../challenge.yaml` identifies the published external baseline.
+The `baseline` field in `../challenge.yaml` selects this directory.
 The local acceptance test uses this directory.
 The draft does not yet satisfy the complete adaptive privacy obligation.
 

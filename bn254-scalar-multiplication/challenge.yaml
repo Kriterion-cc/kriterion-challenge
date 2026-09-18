@@ -79,6 +79,5 @@ criteria:
   - {id: ciphertext_bytes, by: eval, fn: Kriterion.Benchmark.ciphertextBytes, unit: bytes, direction: lower}
 order: [ciphertext_bytes]
 baseline:
-  repo: https://github.com/SebastianElvis/argomac-lean
-  commit: "711689cd0253edece8d0c617ad5a7afaa937673e"
+  path: ./bn254-scalar-multiplication/argomac-lean
 authors: [alice@example.org]
