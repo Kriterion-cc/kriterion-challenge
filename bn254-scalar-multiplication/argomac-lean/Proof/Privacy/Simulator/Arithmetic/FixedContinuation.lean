@@ -42,6 +42,17 @@ theorem FixedContinuation.close [BN254.FieldCertificate] (host : Machine)
   rw [Nat.add_assoc, first, last]
   simp only [PMF.map_comp, Function.comp_def, Option.map_some]
 
+/-- A larger reserve keeps the same complete source and actual charge. -/
+theorem ClosedRun.mono [BN254.FieldCertificate] (host : Machine)
+    (entry : Fin (host.size + 1)) (memory : Memory) (reserve larger : Nat)
+    (source : PMF (Configuration (host.size + 1) × Nat))
+    (law : ClosedRun host entry memory reserve source) (enough : reserve ≤ larger) :
+    ClosedRun host entry memory larger source := by
+  intro fuel
+  have amount : larger + fuel = reserve + (larger - reserve + fuel) := by omega
+  rw [amount]
+  exact law _
+
 /-- A bounded source prefix closes with every supported complete continuation. -/
 theorem sourceContinuation_close [BN254.FieldCertificate] {A : Type} (host : Machine)
     (entry : Fin (host.size + 1)) (initial : Memory) (reserve tailReserve : Nat)

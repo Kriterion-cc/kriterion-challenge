@@ -30,4 +30,22 @@ theorem onlineSamplingMemory_words [BN254.FieldCertificate] [BN254.GroupCertific
   exact storeDrawWords_get (memory.registers 10) 0 memory.ram (onlineWords sample)
     index inside (by rw [onlineWords_length]; decide)
 
+/-- The source proof selects a typed coin for each actual sampled RAM state. -/
+noncomputable def onlineSamplingCoin [BN254.FieldCertificate] [BN254.GroupCertificate]
+    (attempts : Nat) (memory : Memory) (result : Memory × Nat) :
+    (Fin 91 → BN254.Point) × (Fin 92 → BN254.NonZeroBase) := by
+  classical
+  exact if supported : result ∈ (onlineSamplingMemory attempts memory).support then
+    Classical.choose (onlineSamplingMemory_words attempts memory result.1 result.2 supported)
+  else Classical.choice inferInstance
+
+/-- The selected source witness has exactly the words read by the target machine. -/
+theorem onlineSamplingCoin_words [BN254.FieldCertificate] [BN254.GroupCertificate]
+    (attempts : Nat) (memory : Memory) (result : Memory × Nat)
+    (supported : result ∈ (onlineSamplingMemory attempts memory).support) :
+    WordsAt result.1.ram (memory.registers 10) 0 (onlineWords (onlineSamplingCoin attempts memory result)) := by
+  classical
+  rw [onlineSamplingCoin, dif_pos supported]
+  exact (Classical.choose_spec (onlineSamplingMemory_words attempts memory result.1 result.2 supported)).2
+
 end Kriterion.ArgoMAC.ArithmeticSimulator

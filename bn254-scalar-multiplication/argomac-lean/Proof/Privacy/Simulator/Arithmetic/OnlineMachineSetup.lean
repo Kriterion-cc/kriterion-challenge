@@ -62,7 +62,7 @@ theorem onlineLabelSetup_state (memory : Memory) :
 /-- The fixed buffers occupy separate consecutive private intervals. -/
 theorem onlineBuffer_bounds :
     256 ≤ privateBase ∧ privateBase + 917470 = onlineInputBase ∧
-    onlineInputBase + 5 = onlineSampleBase ∧ onlineSampleBase + 365 = onlineTargetBase ∧
+    onlineInputBase + 5 = onlineSampleBase ∧ onlineSampleBase + 368 = onlineTargetBase ∧
     onlineTargetBase + 276 = onlineOriginalBase ∧ onlineOriginalBase + 508 = onlineLinkedBase ∧
     onlineLinkedBase + 508 < 2 ^ 96 := by
   decide

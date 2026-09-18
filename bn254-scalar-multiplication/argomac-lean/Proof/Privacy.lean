@@ -1,3 +1,14 @@
+import Proof.Privacy.Simulator.Arithmetic.OnlineMachineValid
+import Proof.Privacy.Simulator.Arithmetic.CompiledSetupProtocol
+import Proof.Privacy.Simulator.Arithmetic.CompiledQueryCost
+import Proof.Privacy.Simulator.Arithmetic.RecordedPublicJointReady
+import Proof.Privacy.Simulator.Arithmetic.GateDriverJointPrivate
+import Proof.Privacy.Simulator.Arithmetic.GateDriverJointMemory
+import Proof.Privacy.Simulator.Arithmetic.SharedCommandListProgram
+import Proof.Privacy.Simulator.Arithmetic.OnlineMachineLink
+import Proof.Privacy.Simulator.Arithmetic.OnlineMachinePrepare
+import Proof.Privacy.Simulator.Arithmetic.OnlineMachineNull
+import Proof.Privacy.Simulator.Arithmetic.OnlineSamplingWitness
 import Proof.Privacy.Simulator.Arithmetic.RecordedPublicFixedHistory
 import Proof.Privacy.Simulator.Arithmetic.EncLinkTypedSource
 import Proof.Privacy.Simulator.Arithmetic.EncLinkCompleteMemory

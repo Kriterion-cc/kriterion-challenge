@@ -49,7 +49,7 @@ theorem gateTestCoupled_source [BN254.FieldCertificate] (attempts limit : Nat) (
     have selected : (executeLinear gateDriverTest memory).registers 1 = 0 := flag.mpr rfl
     simp only [if_pos selected, ↓reduceIte]
     exact gateThirdCoupled_source attempts limit gate commands tested state
-      (represented.ramEq same) ((stored (by simpa only [if_pos rfl] using count)).ramEq same) room
+      (represented.ramEq same) ((stored (by simpa using count)).ramEq same) room
 
 /-- The second slot retains the saved branch and executes every remaining command. -/
 theorem gateSecondCoupled_source [BN254.FieldCertificate] (attempts limit : Nat) (gate : GateCode)

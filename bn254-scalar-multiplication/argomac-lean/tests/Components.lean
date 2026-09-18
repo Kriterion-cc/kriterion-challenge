@@ -1,4 +1,5 @@
 import Construction
+import Proof.Privacy.Simulator.Arithmetic.OnlineMachineSetup
 
 open Kriterion Kriterion.BN254
 
@@ -160,3 +161,10 @@ theorem sharedRolesUseSamePermutation
     (ArgoMAC.Shared.expandOracle oracle).permutation ⟨kind, position, .hash slot.castSucc⟩ =
       (ArgoMAC.Shared.expandOracle oracle).permutation ⟨kind, position, .pad slot⟩ :=
   ArgoMAC.Shared.shared_slots oracle kind position slot
+
+/-- The online layout reserves the correction point before the selected targets. -/
+theorem onlineCorrectionPointDoesNotOverlapTargets :
+    ArgoMAC.ArithmeticSimulator.onlineSampleBase + 365 + 3 = ArgoMAC.ArithmeticSimulator.onlineTargetBase ∧
+      ArgoMAC.ArithmeticSimulator.onlineTargetBase + 276 = ArgoMAC.ArithmeticSimulator.onlineOriginalBase ∧
+      ArgoMAC.ArithmeticSimulator.onlineOriginalBase + 508 = ArgoMAC.ArithmeticSimulator.onlineLinkedBase := by
+  decide

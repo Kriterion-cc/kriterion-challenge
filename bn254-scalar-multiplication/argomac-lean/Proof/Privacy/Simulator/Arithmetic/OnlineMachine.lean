@@ -15,9 +15,9 @@ attribute [local irreducible] curveGatePlan pointGatePlan
 /-- Each online buffer follows the sampled offline words. -/
 def onlineInputBase : Nat := privateBase + 917470
 def onlineSampleBase : Nat := privateBase + 917475
-def onlineTargetBase : Nat := privateBase + 917840
-def onlineOriginalBase : Nat := privateBase + 918116
-def onlineLinkedBase : Nat := privateBase + 918624
+def onlineTargetBase : Nat := privateBase + 917843
+def onlineOriginalBase : Nat := privateBase + 918119
+def onlineLinkedBase : Nat := privateBase + 918627
 
 /-- Each setup block installs the exact pointers used by its next proved component. -/
 def onlineInputSetup : List LinearInstruction := [.constant 10 (BitVec.ofNat 256 onlineInputBase)]
