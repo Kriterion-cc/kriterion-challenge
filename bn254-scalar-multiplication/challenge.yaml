@@ -83,7 +83,7 @@ references:
     url: https://github.com/Kriterion-cc/kriterion-challenge/tree/main/bn254-scalar-multiplication
     description: The formal library, pinned Lean dependencies, local tests, and starter submission.
   - label: Local ArgoMAC baseline proof map
-    url: https://github.com/Kriterion-cc/argomac-lean/blob/b2f5d09b6a085d13f5fba09db5ae3efa25d0fd7f/Proof/README.md
+    url: https://github.com/Kriterion-cc/argomac-lean/blob/6796e28666eeacd04bf67232b2feb31b222169c0/Proof/README.md
     description: The baseline proof structure, shared-slot privacy proof, arithmetic cost bound, and acceptance tests.
   - label: BaBe implementation
     url: https://github.com/babylonlabs-io/BaBe
@@ -98,5 +98,5 @@ order: [ciphertext_bytes]
 entry_selection: best_admitted
 baseline:
   repo: https://github.com/Kriterion-cc/argomac-lean.git
-  commit: "b2f5d09b6a085d13f5fba09db5ae3efa25d0fd7f"
+  commit: "6796e28666eeacd04bf67232b2feb31b222169c0"
 authors: [alice@example.org]
