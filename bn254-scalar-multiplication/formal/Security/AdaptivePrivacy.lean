@@ -1,5 +1,8 @@
 import GarbledCircuit
 import Cryptography.Assumptions
+import Cryptography.BoundedMachine
+import Encoding
+import Mathlib.Data.Fintype.EquivFin
 
 /-!
 This module defines the adaptive games.
@@ -108,8 +111,8 @@ noncomputable def idealGame
         PMF.map Prod.fst ((adversary.decide parameter simulated.1 encoded.1 auxiliary
           selected.1.2).run oracleHandler encoded.2)
 
-/-- The challenge bounds the advantage between the two BaBe experiments.
-The work-per-advantage inequality is a concrete challenge rule, not BaBe's PPT definition. -/
+/-- This helper bounds the distance between two abstract experiments.
+The final adaptive privacy property also requires a bounded machine. -/
 def ConcreteAdaptivePrivacy
     {oracle : OracleSpec}
     {Circuit Input Output Randomness Public EncodingKey Labels EvaluationOracle Topology State : Type u}
@@ -151,5 +154,131 @@ theorem ConcreteAdaptivePrivacy.mapLabels
       adversary.chooseInput, fun parameter circuit labels => adversary.decide parameter circuit (pack labels)⟩
   simpa only [realGame, idealGame, GarbledCircuit.mapLabels, Simulator.mapLabels, same, PMF.bind_map, Function.comp_def, adversaryWork, original]
     using privacy original circuit auxiliary parameter
+
+namespace SimulatorProtocol
+
+open BN254
+
+def bits (width value : Nat) : List Bool :=
+  (List.finRange width).map (BitVec.ofNat width value).getLsb
+
+def natural (value : Nat) : List Bool :=
+  List.replicate value.size true ++ false :: bits value.size value
+
+def affine (input : AffineInput) : List Bool := bits 254 input.x.val ++ bits 254 input.y.val
+
+def output [FieldCertificate] : Option Point → List Bool
+  | none => [false, false]
+  | some .zero => [false, true]
+  | some (.some (x := x) (y := y) _) => [true, false] ++ affine ⟨x, y⟩
+
+/-- The protocol fixes every query tag and every operand width. -/
+noncomputable def query {FixedIndex EncIndex : Type} [Fintype FixedIndex] [Fintype EncIndex] :
+    PublicQuery FixedIndex EncIndex → List Bool
+  | .fixedForward index value => bits 3 0 ++ bits (Fintype.card FixedIndex).size
+      (Fintype.equivFin FixedIndex index).val ++ bits 128 value.toNat
+  | .fixedInverse index value => bits 3 1 ++ bits (Fintype.card FixedIndex).size
+      (Fintype.equivFin FixedIndex index).val ++ bits 128 value.toNat
+  | .encForward index value => bits 3 2 ++ bits (Fintype.card EncIndex).size
+      (Fintype.equivFin EncIndex index).val ++ bits 128 value.toNat
+  | .encInverse index value => bits 3 3 ++ bits (Fintype.card EncIndex).size
+      (Fintype.equivFin EncIndex index).val ++ bits 128 value.toNat
+  | .hash value => bits 3 4 ++ bits 254 value.val
+
+/-- The parser accepts exactly the required number of little-endian bits. -/
+def words (width count : Nat) (wire : List Bool) : Option (Vector (BitVec width) count) :=
+  if wire.length = width * count then
+    some (Vector.ofFn fun i => BitVec.ofNat width
+      (((wire.drop (i.val * width)).take width).foldr (fun bit acc => bit.toNat + 2 * acc) 0))
+  else none
+
+def answer {FixedIndex EncIndex : Type} (request : PublicQuery FixedIndex EncIndex)
+    (wire : List Bool) : Option request.Answer :=
+  match request with
+  | .fixedForward _ _ | .fixedInverse _ _ | .encForward _ _ | .encInverse _ _ =>
+      (words 128 1 wire).map fun values => values[0]
+  | .hash _ => (words 128 2 wire).map fun values => (values[0], values[1])
+
+/-- The adversary keeps its original query budget. Only the simulator pays machine costs. -/
+noncomputable def runProgram [BN254.FieldCertificate] {FixedIndex EncIndex Result : Type}
+    [Fintype FixedIndex] [Fintype EncIndex] (machine : BoundedMachine.Machine) :
+    {budget : Nat} → OracleProgram (publicOracleSpec FixedIndex EncIndex) Result budget →
+      BoundedMachine.State → OptionT PMF (Result × BoundedMachine.State)
+  | _, .pure distribution, state => do
+      let value ← liftM distribution
+      pure (value, state)
+  | _, .sample distribution next, state => do
+      let value ← liftM distribution
+      runProgram machine (next value) state
+  | _, .query request next, state => do
+      let (wire, updated) ← OptionT.mk (BoundedMachine.respond machine
+        ([true, false] ++ query request) { state with queries := state.queries + 1 })
+      let value ← OptionT.mk (PMF.pure (answer request wire))
+      runProgram machine (next value) updated
+
+/-- The decoder supplies only the adversary's public view.
+The canonical check requires the machine to produce the complete public bytes. -/
+def publicValue {Public : Type} (encoding : Encoding Public) (bytes : Nat)
+    (wire : List Bool) : Option Public := do
+  let values ← words 8 bytes wire
+  let raw := (values.map BitVec.toFin).toList
+  let (value, tail) ← encoding.decode raw
+  if tail.isEmpty && encoding.encode value == raw then some value else none
+
+/-- The simulator receives no scalar. Every failed request aborts the ideal experiment. -/
+noncomputable def idealGame [FieldCertificate]
+    {FixedIndex EncIndex Randomness Public Key Oracle Aux : Type}
+    [Fintype FixedIndex] [Fintype EncIndex]
+    (scheme : GarbledCircuit NonZeroScalar AffineInput (Option Point) Randomness Public
+      Key LamportSignature Oracle) (encoding : Encoding Public) (bytes : Nat)
+    (machine : BoundedMachine.Machine)
+    (adversary : AdaptiveAdversary (publicOracleSpec FixedIndex EncIndex)
+      AffineInput Public LamportSignature Aux)
+    (parameter : Nat) (scalar : NonZeroScalar) (auxiliary : Aux) : PMF Bool :=
+  let experiment : OptionT PMF Bool := do
+    let (wire, initial) ← OptionT.mk (BoundedMachine.respond machine
+      ([false, false] ++ natural parameter ++ natural bytes) (BoundedMachine.initial machine))
+    let circuit ← OptionT.mk (PMF.pure (publicValue encoding bytes wire))
+    let (selected, chosen) ← runProgram machine (adversary.chooseInput parameter circuit auxiliary) initial
+    let (wire, encoded) ← OptionT.mk (BoundedMachine.respond machine
+      ([false, true] ++ affine selected.1 ++ output (scheme.function scalar selected.1)) chosen)
+    let labels ← OptionT.mk (PMF.pure (words 128 508 wire))
+    let (decision, _) ← runProgram machine
+      (adversary.decide parameter circuit labels auxiliary selected.2) encoded
+    pure decision
+  experiment.run.map (fun result => result.getD false)
+
+end SimulatorProtocol
+
+open BN254
+
+/-- Adaptive privacy includes the machine budget and every implementation error.
+One simulator and one machine serve every adversary and scalar. -/
+def AdaptivePrivacy [FieldCertificate]
+    {FixedIndex EncIndex Randomness Public Key Oracle State Aux : Type}
+    [Fintype FixedIndex] [Fintype EncIndex]
+    (scheme : GarbledCircuit NonZeroScalar AffineInput (Option Point) Randomness Public
+      Key LamportSignature Oracle) (encoding : Encoding Public) (bytes : Nat)
+    (randomTape : Nat → PMF Randomness)
+    (realOracle : OracleHandler (publicOracleSpec FixedIndex EncIndex) Randomness)
+    (idealOracle : OracleHandler (publicOracleSpec FixedIndex EncIndex) State)
+    (idealView : State → PublicOracle FixedIndex EncIndex) : Prop :=
+  ∃ simulator : Simulator AffineInput (Option Point) Public LamportSignature Nat State,
+  ∃ machine : BoundedMachine.Machine,
+    OracleSimulation simulator idealOracle idealView ∧
+    ∀ adversary : AdaptiveAdversary (publicOracleSpec FixedIndex EncIndex)
+        AffineInput Public LamportSignature Aux,
+      ∀ parameter scalar auxiliary,
+        let real := realGame scheme randomTape realOracle adversary parameter scalar auxiliary
+        let ideal := idealGame scheme (fun _ => bytes) simulator idealOracle adversary parameter scalar auxiliary
+        WorkPerAdvantage 100 (adversaryWork adversary parameter)
+          (advantage real ideal + advantage ideal
+            (SimulatorProtocol.idealGame scheme encoding bytes machine adversary parameter scalar auxiliary))
+
+/-- The shared allowance bounds the real experiment against the bounded machine. -/
+theorem adaptivePrivacyTransfer {real ideal bounded : PMF Bool} {work : Nat}
+    (bound : WorkPerAdvantage 100 work (advantage real ideal + advantage ideal bounded)) :
+    WorkPerAdvantage 100 work (advantage real bounded) :=
+  le_trans (mul_le_mul_of_nonneg_right (advantageTriangle real ideal bounded) (by positivity)) bound
 
 end Kriterion.GarbledCircuit

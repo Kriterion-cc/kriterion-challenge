@@ -3,33 +3,44 @@ title: Smallest BN254 scalar multiplication garbled circuit
 submissions_open_at: "2026-09-17T03:00:00Z"
 submission_access: permissionless
 statement: |
-  Build a computable garbled circuit for fixed-scalar multiplication on BN254.
+  Authors must build a computable garbled circuit for fixed-scalar multiplication on BN254.
   The garbler holds a nonzero scalar. The evaluator supplies affine coordinates.
-  Reject inputs outside `y² = x³ + 3`. Return the scalar multiple for valid inputs.
-
-  Prove these properties in Lean:
-
-  - correct evaluation for every field-element input and random tape, including off-curve rejection;
-  - a constant flat public byte layout that does not reveal the scalar;
-  - 100-bit adaptive privacy in the two-stage game, with work equal to public queries plus one decision step;
-  - one 128-bit Lamport label pair for each bit of `x || y`, with 254 little-endian bits per coordinate; and
-  - encoded labels that satisfy the matching Bitcoin HASH160 locks.
-
+  The circuit must reject inputs outside `y² = x³ + 3`. It must return the scalar multiple for valid inputs.
+  Authors must prove correctness in Lean for every field-element input and random tape.
+  The public byte layout must remain constant for every scalar and random tape.
+  The evaluator receives its input separately from exactly 508 selected 128-bit Lamport labels.
+  Each coordinate uses 254 little-endian bits. The labels must satisfy the matching Bitcoin HASH160 locks.
   The adversary selects its input after it sees the public circuit. It can query all public oracles.
-  The simulator receives only the topology, selected input, and output. It uses private coins in each stage.
-  The proof uses the pinned VCV-io random-oracle model and independent uniform permutation families.
+  The first simulator stage receives only the public parameter and fixed byte count. The second stage receives the input and output.
+  The simulator uses private coins. Its oracle handler must preserve every prior query answer.
+  Authors must provide one finite probabilistic arithmetic machine for the complete simulator.
+  The machine uses sixteen 256-bit registers, RAM with 256-bit addresses, and four binary stacks.
+  Its fixed instructions support word arithmetic, bit operations, comparison, and BN254 field arithmetic.
+  Its group instruction adds two BN254 points and rejects invalid point encodings.
+  Its other instructions load or store one word, write a constant, branch, push or pop one bit, draw one fair bit, or halt.
+  Each instruction has a fixed number of bounded operands. The program counter has at most 256 bits.
+  The instruction set accepts no Lean callbacks or arbitrary probability distributions.
+  The machine pays one unit per instruction and one unit per control-table entry.
+  The total budget after q adversary oracle queries is B(q) = 64*q^2 + 134217728*q + 70368744177664 units.
+  One counter covers setup, both simulator stages, private coins, and all oracle responses.
+  The machine starts with zero registers, zero RAM, and empty binary stacks. It has no external function calls or free advice tables.
+  The fixed protocol supplies public inputs as bits. The machine produces the complete canonical public bytes.
+  The decoder supplies only the adversary's public view. The machine never receives the decoded value.
+  The interpreter aborts when the machine exceeds its budget or returns a reply with the wrong length.
+  Authors must prove that the real-to-ideal advantage plus the ideal-to-machine advantage is at most (Q + 1) / 2^100.
+  Here Q is the sum of the adversary's two declared oracle-query budgets. The adversary's local computation remains unrestricted.
+  This bound includes sampling approximation and abort error. One machine must work for every scalar and adversary.
+  The numerical budget covers the local ArgoMAC baseline's complete arithmetic phase sum.
+  Lean checks that cost bound and the complete machine-to-ideal simulation proof.
+  The local ArgoMAC baseline proves the revised obligation.
+  The proof uses the pinned VCV-io probability library and independent uniform permutation families. The simulator may program fresh pairs.
   The curve certificate premises remain explicit. The shared library proves scalar-field primality.
-  The evaluator receives its input separately from exactly 508 labels. The work count excludes local computation.
-  The simulator can program fresh permutation pairs. It must preserve every prior query answer.
-  Authors may use VCV-io primitives, intermediate games, and reductions to prove the fixed obligation.
-  Authors must not change the final security game, public oracle access, or work count.
-
-  Minimize ciphertext size in bytes. Count every construction-dependent public field that evaluation needs.
-  The encoding must preserve the complete public circuit. The byte count must be constant for all scalars and random tapes.
-  The count excludes secret encoding keys, selected input labels, and fixed challenge data.
+  The objective minimizes ciphertext bytes. The encoding must preserve every construction-dependent public field that evaluation needs.
+  The byte count excludes secret encoding keys, selected input labels, and fixed challenge data.
+  The local Lean obligation and the published library pin enforce this budget.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
-  commit: "e66a3eaa37c95b66380002a1a3333e140aee28c7"
+  commit: "e8ee38e77c2abc19e4efd14b44d11f9be2a3fc91"
 formal: ./bn254-scalar-multiplication/formal
 toolchain: leanprover/lean4:v4.33.1
 mathlib: v4.33.1
@@ -53,9 +64,9 @@ references:
   - label: Public challenge package and starter
     url: https://github.com/Kriterion-cc/kriterion-challenge/tree/main/bn254-scalar-multiplication
     description: The formal library, pinned Lean dependencies, local tests, and starter submission.
-  - label: Pinned ArgoMAC baseline proof map
-    url: https://github.com/SebastianElvis/argomac-lean/blob/711689cd0253edece8d0c617ad5a7afaa937673e/Proof/README.md
-    description: The baseline proof structure, security review, sampling laws, and compiler measurements.
+  - label: Local ArgoMAC baseline proof map
+    url: https://github.com/Kriterion-cc/kriterion-challenge/blob/e8ee38e77c2abc19e4efd14b44d11f9be2a3fc91/bn254-scalar-multiplication/argomac-lean/Proof/README.md
+    description: The baseline proof structure, shared-slot privacy proof, arithmetic cost bound, and acceptance tests.
   - label: BaBe implementation
     url: https://github.com/babylonlabs-io/BaBe
     description: The Rust implementation of BaBe, including the ArgoMAC garbling code and timing tools.
@@ -68,6 +79,5 @@ criteria:
 order: [ciphertext_bytes]
 entry_selection: best_admitted
 baseline:
-  repo: https://github.com/SebastianElvis/argomac-lean
-  commit: "711689cd0253edece8d0c617ad5a7afaa937673e"
+  path: ./bn254-scalar-multiplication/argomac-lean
 authors: [alice@example.org]

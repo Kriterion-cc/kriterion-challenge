@@ -1,6 +1,7 @@
 name = "bn254-scalar-multiplication"
 version = "0.1.0"
 defaultTargets = ["Kriterion", "Tests"]
+testDriver = "CheckBaseline"
 
 [[require]]
 name = "VCVio"
@@ -15,9 +16,13 @@ rev = "v4.33.1"
 [[lean_lib]]
 name = "Kriterion"
 srcDir = "formal"
-roots = ["BN254", "Benchmark", "Cryptography.Assumptions", "Cryptography.Primitives", "Cryptography.Probability", "Cryptography.RandomOracle", "Cryptography.Permutation", "Encoding", "GarbledCircuit", "RandomizedEncoding", "ScalarMultiplication", "Security.AdaptivePrivacy", "Security.Correctness", "Solution"]
+roots = ["BN254", "Benchmark", "Cryptography.Assumptions", "Cryptography.BoundedMachine", "Cryptography.Primitives", "Cryptography.Probability", "Cryptography.RandomOracle", "Cryptography.Permutation", "Encoding", "GarbledCircuit", "RandomizedEncoding", "ScalarMultiplication", "Security.AdaptivePrivacy", "Security.Correctness", "Solution"]
 
 [[lean_lib]]
 name = "Tests"
 srcDir = "tests"
-roots = ["TestSolution"]
+roots = ["PaperFormulaChecks", "TestSolution"]
+
+[[lean_exe]]
+name = "CheckBaseline"
+srcDir = "tests"
