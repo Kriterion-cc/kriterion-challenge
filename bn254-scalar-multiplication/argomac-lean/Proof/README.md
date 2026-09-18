@@ -142,7 +142,7 @@ The measurements do not establish a compiler speed improvement from this refacto
 You can repeat a measurement from the upstream challenge directory:
 
 ```sh
-/usr/bin/time -l lake env lean -Dtrace.profiler=true -Dtrace.profiler.threshold=1000 argomac-lean/Proof/Privacy/Distribution/PublicDistribution.lean
+/usr/bin/time -l lake env lean -Dtrace.profiler=true -Dtrace.profiler.threshold=1000 Proof/Privacy/Distribution/PublicDistribution.lean
 ```
 
 ## Fixed permutation slots
@@ -178,7 +178,7 @@ The checked Lean files match the workspace Lean files exactly.
 | `Kriterion.Benchmark.ciphertextBytes` | 9,699,931 bytes |
 
 The full challenge build also passes with 3,666 jobs.
-The separate `lake env lean argomac-lean/tests/Operational.lean` check passes.
+The separate `lake env lean tests/Operational.lean` check passes.
 All 223 proof modules remain reachable from the four roots.
 The proof import graph has no cycles.
 This refactor removes 24 Lean lines overall.

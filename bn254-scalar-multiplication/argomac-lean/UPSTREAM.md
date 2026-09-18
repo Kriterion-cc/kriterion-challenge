@@ -20,3 +20,7 @@ The local copy also contains the later proof fixes.
 The previous `BudgetAudit.lean` is now `tests/ProofAudit.lean`.
 The memory layout proofs from `LayoutCheck.lean` already appear in `Proof/Privacy/Simulator/Arithmetic/MemoryLayout.lean`.
 The protocol checks from `ProtocolCheck.lean` already appear in `Proof/Privacy/Simulator/Arithmetic/ParsedProgramSource.lean`.
+
+The `argomac-lean/` directory is the only starter.
+The repository has no separate `starter/` directory.
+The repository contains one copy of the ArgoMAC source.

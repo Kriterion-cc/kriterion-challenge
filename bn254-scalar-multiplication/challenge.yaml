@@ -38,7 +38,7 @@ statement: |
   The objective minimizes ciphertext bytes. The encoding must preserve every construction-dependent public field that evaluation needs.
   The byte count excludes secret encoding keys, selected input labels, and fixed challenge data.
   The local Lean obligation enforces this budget. The published library pin still points to the previous obligation.
-  The publisher must update the library and starter pins before the hosted verifier accepts this revision.
+  The publisher must update the library pin before the hosted verifier accepts this revision.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
   commit: "e66a3eaa37c95b66380002a1a3333e140aee28c7"

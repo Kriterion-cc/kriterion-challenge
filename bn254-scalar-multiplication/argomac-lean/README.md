@@ -1,6 +1,7 @@
 # argomac-lean
 
-This directory contains the ArgoMAC construction for BN254 scalar multiplication.
+This directory is the complete starter for the BN254 scalar multiplication challenge.
+It contains the ArgoMAC construction, proofs, and tests.
 The Kriterion verifier reads `Submission.solution`.
 
 ## Status
@@ -59,7 +60,7 @@ The comparison uses BaBe.latex commit `e2dcf4d540b2708e13cd21090df759051119a116`
 `Proof/Privacy/PaperConstruction.lean` proves the block formula and tweak relations.
 The point tweaks range from 0 through 91.
 Curve gates use tweak 92.
-The challenge's `../starter/PAPER_CORRECTIONS.md` records the coordinate counterexamples.
+The challenge's `../PAPER_CORRECTIONS.md` records the coordinate counterexamples.
 
 ## Simulator proofs
 

@@ -4,7 +4,7 @@ This challenge ranks verified garbled-circuit constructions by their ciphertext 
 
 The `formal/` directory defines `Kriterion.Solution` and all fixed proof rules.
 The `challenge.yaml` file contains the complete challenge definition.
-The `starter/` directory contains the required submission layout.
+The `argomac-lean/` directory contains the complete ArgoMAC construction, proofs, and tests.
 
 The repository contains the complete [ArgoMAC baseline](argomac-lean/README.md).
 Its [proof map](argomac-lean/Proof/README.md) describes the proof structure.
@@ -79,8 +79,9 @@ The older `ConcreteAdaptivePrivacy` predicate remains an abstract game bound for
 `Solution` checks only the combined `AdaptivePrivacy` property.
 Old submissions need a new bounded simulator proof.
 
-The library and starter pins still select the previous published obligation.
-The publisher must update both pins before deployment.
+The published library pin still selects the previous obligation.
+The local starter uses the local library.
+The publisher must update the published library pin before deployment.
 
 ## Build the public library
 
@@ -105,8 +106,11 @@ This revision is not ready for deployment.
 
 ## Start a submission
 
-Copy the contents of `starter/` into a new public Git repository.
-Replace the placeholder in `Submission.lean` with a complete `Kriterion.Solution` value.
+Use `argomac-lean/` as the source for a new submission.
+The starter contains the ArgoMAC implementation.
+Its final adaptive privacy proof remains incomplete.
+The local Lake configuration uses the challenge library in `..`.
+A separate submission repository must replace that local dependency with the published challenge pin.
 
 The starter follows the baseline's four proof roots: correctness, privacy,
 Lamport compatibility, and ciphertext size. You can change the internal module
@@ -120,8 +124,8 @@ lake exe cache get
 lake build
 ```
 
-The local build accepts the starter placeholder with a warning.
-The Kriterion verifier rejects the placeholder and all other unproved axioms.
+The current starter build fails at its open adaptive privacy goals.
+The Kriterion verifier rejects incomplete proofs and disallowed axioms.
 
 Before submission, push the repository and use its full 40-character commit hash.
 
