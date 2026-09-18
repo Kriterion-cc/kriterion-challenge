@@ -8,7 +8,8 @@ The `argomac-lean/` directory contains the complete ArgoMAC construction, proofs
 
 The repository contains the complete [ArgoMAC baseline](argomac-lean/README.md).
 Its [proof map](argomac-lean/Proof/README.md) describes the proof structure.
-The local baseline uses the local challenge library.
+The baseline submodule pins `Kriterion-cc/argomac-lean`.
+The local test overrides its Git dependency with the local challenge library.
 Its [source record](argomac-lean/UPSTREAM.md) identifies the original repository.
 
 ## Simulator budget
@@ -79,13 +80,14 @@ The older `ConcreteAdaptivePrivacy` predicate remains an abstract game bound for
 Old submissions need a new bounded simulator proof.
 
 The published library pin selects the checked revision of this obligation.
-The local starter uses the same library from this repository.
+The starter pins the published library commit.
 
 ## Build the public library
 
 Install `elan`, and then run these commands:
 
 ```sh
+git submodule update --init --recursive
 cd bn254-scalar-multiplication
 lake exe cache get
 lake build Kriterion Tests
@@ -106,8 +108,8 @@ The baseline must pass this test before deployment.
 Use `argomac-lean/` as the source for a new submission.
 The starter contains the ArgoMAC implementation.
 Its adaptive privacy proof includes the complete arithmetic simulator.
-The local Lake configuration uses the challenge library in `..`.
-A separate submission repository must replace that local dependency with the published challenge pin.
+The Lake configuration pins the public challenge library.
+A separate submission repository uses the same configuration.
 
 The starter follows the baseline's four proof roots: correctness, privacy,
 Lamport compatibility, and ciphertext size. You can change the internal module

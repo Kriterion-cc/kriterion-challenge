@@ -1,6 +1,7 @@
 id: scalar-multiplication
 title: Smallest BN254 scalar multiplication garbled circuit
 submissions_open_at: "2026-09-17T03:00:00Z"
+submissions_close_at: "2026-10-03T03:00:00Z"
 submission_access: permissionless
 statement: |
   Authors must build a computable garbled circuit for fixed-scalar multiplication on BN254.
@@ -40,7 +41,7 @@ statement: |
   The local Lean obligation and the published library pin enforce this budget.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
-  commit: "e8ee38e77c2abc19e4efd14b44d11f9be2a3fc91"
+  commit: "3322a36abd962aa5960e65d7f2d8b9f72478d1e3"
 formal: ./bn254-scalar-multiplication/formal
 toolchain: leanprover/lean4:v4.33.1
 mathlib: v4.33.1
@@ -65,7 +66,7 @@ references:
     url: https://github.com/Kriterion-cc/kriterion-challenge/tree/main/bn254-scalar-multiplication
     description: The formal library, pinned Lean dependencies, local tests, and starter submission.
   - label: Local ArgoMAC baseline proof map
-    url: https://github.com/Kriterion-cc/kriterion-challenge/blob/e8ee38e77c2abc19e4efd14b44d11f9be2a3fc91/bn254-scalar-multiplication/argomac-lean/Proof/README.md
+    url: https://github.com/Kriterion-cc/argomac-lean/blob/b2f5d09b6a085d13f5fba09db5ae3efa25d0fd7f/Proof/README.md
     description: The baseline proof structure, shared-slot privacy proof, arithmetic cost bound, and acceptance tests.
   - label: BaBe implementation
     url: https://github.com/babylonlabs-io/BaBe
@@ -79,5 +80,6 @@ criteria:
 order: [ciphertext_bytes]
 entry_selection: best_admitted
 baseline:
-  path: ./bn254-scalar-multiplication/argomac-lean
+  repo: https://github.com/Kriterion-cc/argomac-lean.git
+  commit: "b2f5d09b6a085d13f5fba09db5ae3efa25d0fd7f"
 authors: [alice@example.org]
