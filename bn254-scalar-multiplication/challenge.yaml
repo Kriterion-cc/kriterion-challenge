@@ -4,58 +4,130 @@ submissions_open_at: "2026-09-17T03:00:00Z"
 submissions_close_at: "2026-10-03T03:00:00Z"
 submission_access: permissionless
 statement: |
-  ## Problem
+  Authors must construct a computable garbled circuit for BN254 scalar multiplication.
+  The objective minimizes the complete public ciphertext size in bytes.
+  A submission must define `Submission.solution : Kriterion.Solution` and prove every requirement below.
+  The pinned Lean library defines the exact types, experiments, and machine semantics.
 
-  Authors must build a computable garbled circuit for fixed-scalar multiplication on BN254.
-  The garbler holds a nonzero scalar. The evaluator supplies affine coordinates.
-  The circuit must reject inputs outside `y² = x³ + 3`. It must return the scalar multiple for valid inputs.
+  ### Target function
 
-  ## Construction requirements
+  The coordinate field is `F_p`, where
+  `p = 21888242871839275222246405745257275088696311157297823662689037894645226208583`.
+  The scalar field is `F_r`, where
+  `r = 21888242871839275222246405745257275088548364400416034343698204186575808495617`.
+  The curve is `E: y² = x³ + 3` over `F_p`.
+  The garbler holds a scalar `k ∈ F_r` with `k ≠ 0`.
+  The evaluator supplies an input `u = (x, y) ∈ F_p²`.
+  The target function `f_k(u)` returns `some ([k]P)` when `P = (x, y)` lies on `E`.
+  The target function returns `none` when the input lies outside `E`.
+  The point type includes the identity element.
+  The input type contains field elements; it does not specify a parser for external coordinate bytes.
 
-  Authors must prove correctness in Lean for every field-element input and random tape.
-  The public byte layout must remain constant for every scalar and random tape.
-  The evaluator receives its input separately from exactly 508 selected 128-bit Lamport labels.
-  Each coordinate uses 254 little-endian bits. The labels must satisfy the matching Bitcoin HASH160 locks.
+  The solution must work for every `FieldCertificate` and `GroupCertificate` in the library.
+  These certificates assume that `p` is prime, that `r` annihilates every curve point, and that the declared endomorphism has its stated scalar action.
+  These premises remain explicit assumptions of the challenge.
+  The library proves that `r` is prime.
 
-  ## Simulator requirements
+  ### Construction and correctness
 
-  The adversary selects its input after it sees the public circuit. It can query all public oracles.
-  The first simulator stage receives only the public parameter and fixed byte count. The second stage receives the input and output.
-  The simulator uses private coins. Its oracle handler must preserve every prior query answer.
-  Authors must provide one finite probabilistic arithmetic machine for the complete simulator.
+  The construction supplies `Garble`, `Encode`, and `Evaluate` through the `scheme` field.
+  For a public parameter `n`, scalar `k`, and random tape `ρ`, `Garble(n, k, ρ)` returns a public value `C` and a secret encoding key `K`.
+  The finite random tape contains the private coins and the public oracle tables.
+  The real experiment samples this tape uniformly.
+  The `oracleUniform` proof must establish the prescribed joint uniform law for all public oracle tables.
+  The model provides independent families of 128-bit permutations, their inverses, and an independent uniform hash function.
+  The evaluator and adversary use the same public oracle interface.
 
-  ## Machine model
+  The input encoding uses 508 bits: the 254 little-endian bits of `x`, followed by those of `y`.
+  The encoding key supplies 508 pairs of 128-bit blocks.
+  `Encode(K, u)` must equal the vector that selects one block from each pair with the corresponding input bit.
+  This equality applies to the entire output of `Encode`; the output contains no extra payload.
+  The resulting vector has the exact type `LamportSignature`.
+  The library proves that these labels satisfy the corresponding Lamport hash locks for an explicit 160-bit hash function.
+  This hash-lock theorem does not prove an implementation of Bitcoin HASH160.
 
-  The machine uses sixteen 256-bit registers, RAM with 256-bit addresses, and four binary stacks.
-  Its fixed instructions support word arithmetic, bit operations, comparison, and BN254 field arithmetic.
-  Its group instruction adds two BN254 points and rejects invalid point encodings.
-  Its other instructions load or store one word, write a constant, branch, push or pop one bit, draw one fair bit, or halt.
-  Each instruction has a fixed number of bounded operands. The program counter has at most 256 bits.
-  The instruction set accepts no Lean callbacks or arbitrary probability distributions.
-  The machine pays one unit per instruction and one unit per control-table entry.
-  The total budget after q adversary oracle queries is B(q) = 64*q^2 + 134217728*q + 70368744177664 units.
-  One counter covers setup, both simulator stages, private coins, and all oracle responses.
-  The machine starts with zero registers, zero RAM, and empty binary stacks. It has no external function calls or free advice tables.
-  The fixed protocol supplies public inputs as bits. The machine produces the complete canonical public bytes.
-  The decoder supplies only the adversary's public view. The machine never receives the decoded value.
-  The interpreter aborts when the machine exceeds its budget or returns a reply with the wrong length.
+  `Evaluate` receives the public oracle, `C`, the input `u`, and the 508 selected labels.
+  The `functionCorrect` proof must identify the target with `f_k`.
+  The `perfectCorrectness` proof must establish the following equation for every parameter, scalar, tape, and input:
 
-  ## Security requirement
+  `Evaluate(oracle(ρ), C, u, Encode(K, u)) = some (f_k(u))`.
 
-  Authors must prove that the real-to-ideal advantage plus the ideal-to-machine advantage is at most (Q + 1) / 2^100.
-  Here Q is the sum of the adversary's two declared oracle-query budgets. The adversary's local computation remains unrestricted.
-  This bound includes sampling approximation and abort error. One machine must work for every scalar and adversary.
-  The numerical budget covers the local ArgoMAC baseline's complete arithmetic phase sum.
-  Lean checks that cost bound and the complete machine-to-ideal simulation proof.
-  The local ArgoMAC baseline proves the revised obligation.
-  The proof uses the pinned VCV-io probability library and independent uniform permutation families. The simulator may program fresh pairs.
-  The curve certificate premises remain explicit. The shared library proves scalar-field primality.
+  Thus `some none` denotes correct rejection of an off-curve input.
+  The outer `none` denotes evaluation failure and cannot satisfy correctness.
 
-  ## Objective
+  ### Adaptive privacy
 
-  The objective minimizes ciphertext bytes. The encoding must preserve every construction-dependent public field that evaluation needs.
-  The byte count excludes secret encoding keys, selected input labels, and fixed challenge data.
-  The local Lean obligation and the published library pin enforce this budget.
+  The adversary receives `C` before it selects `u`.
+  The adversary can query the public oracles before and after it receives the selected labels.
+  Its local computation and private sampling have no time bound.
+  Its two declared query budgets have sum `Q`.
+  The challenge fixes the auxiliary input type to `Unit`.
+
+  The solution must provide one abstract simulator and one finite probabilistic arithmetic machine for every scalar, parameter, and adversary.
+  The first simulator stage receives only `n` and the fixed ciphertext byte count `b`.
+  The second stage receives the retained state, the selected input `u`, and `f_k(u)`.
+  Neither stage receives `k` directly.
+  The simulator can use private coins and program fresh oracle answers.
+  Its oracle handler must agree with its public oracle view and preserve all previous answers.
+  The second stage must also preserve every answer that the adversary has already received.
+
+  Let `R`, `I`, and `M` denote the real, abstract ideal, and machine ideal experiments.
+  For two experiments `X` and `Y`, define `Adv(X,Y) = |Pr[X = true] - Pr[Y = true]|`.
+  The `adaptivePrivacy` proof must establish
+
+  `Adv(R,I) + Adv(I,M) ≤ (Q + 1) / 2^100`.
+
+  This bound covers every adversary, scalar, and parameter.
+  The same allowance includes sampling error and machine aborts.
+  The challenge requires both the abstract simulator and its bounded implementation.
+  An abstract game bound alone does not satisfy this requirement.
+
+  ### Simulator machine
+
+  The machine has sixteen 256-bit registers, RAM with 256-bit addresses, and four binary stacks.
+  The machine starts with zero registers, zero RAM, and empty stacks.
+  Its fixed instructions support word arithmetic, bit operations, comparison, BN254 field arithmetic, point addition, memory access, constants, branches, stack operations, fair random bits, and halts.
+  Point addition rejects invalid point encodings.
+  Each instruction has a fixed number of bounded operands.
+  The program counter has at most 256 bits.
+  The instruction set permits no arbitrary Lean callbacks, external functions, or arbitrary probability distributions.
+
+  The machine pays one unit per control-table entry and one unit per executed instruction.
+  After `q` actual adversary oracle queries, its total cost must fit
+
+  `B(q) = 64*q^2 + 134217728*q + 70368744177664`.
+
+  One accumulated counter covers setup, both simulator stages, every fair random bit, and all oracle responses.
+  This budget measures the specified machine operations, not processor time.
+  The fixed bit protocol supplies the public parameter, byte count, selected input, output, and oracle requests.
+  The machine must return the complete canonical public bytes, exactly 508 labels, and correctly sized oracle answers.
+  The decoder supplies only the adversary's public view; the machine does not receive the decoded public value.
+  The interpreter aborts when the machine exhausts its budget or returns an invalid response.
+  An aborted machine experiment returns `false`.
+
+  ### Public encoding and score
+
+  The solution supplies a byte encoder and decoder for its complete public value.
+  For every public value `C` and byte suffix `t`, the encoding must satisfy
+
+  `decode(encode(C) ++ t) = some (C, t)`.
+
+  Every generated public value must encode to the same length `b`, for every parameter, scalar, and tape.
+  The encoding must include every construction-dependent public field that evaluation needs.
+  The score excludes secret encoding keys, selected input labels, and fixed challenge data.
+  The verifier evaluates `Kriterion.Benchmark.ciphertextBytes` to obtain `b`.
+  Lower values rank first.
+  The public baseline supplies a verified reference construction; a submission can use a different construction that satisfies the same requirements.
+
+  ### Verification and acceptance
+
+  The verifier uses the library commit, Lean toolchain, and dependencies pinned in this challenge.
+  The verifier checks the repository layout, Lean build, `Kriterion.Solution` obligation, axiom dependencies, and executable construction.
+  The axiom audit permits only `propext`, `Classical.choice`, and `Quot.sound`.
+  The computability check applies to the construction code; proof-only definitions can use noncomputable mathematics.
+  The four published properties are computable garbling, Lamport compatibility, correctness, and adaptive privacy.
+  A submission must pass every verifier check and produce its metric before it can enter the ranking.
+  The AI note supplies advice and cannot change verification or rank.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
   commit: "3322a36abd962aa5960e65d7f2d8b9f72478d1e3"
@@ -70,27 +142,33 @@ properties:
   - {id: correctness, label: Correctness}
   - {id: adaptive_privacy, label: Adaptive privacy}
 references:
-  - label: Kriterion CLI downloads
+  - label: Submission guide
+    url: https://kriterion.cc/docs/tutorials/first-submission
+    description: The guide explains account setup, source preparation, and submission through the public CLI.
+  - label: CLI downloads
     url: https://kriterion.cc/download
-    description: Download a versioned CLI file and verify its SHA-256 checksum.
-  - label: Kriterion participant documentation
-    url: https://kriterion.cc/docs
-    description: Read the rendered tutorials, how-to guides, reference, and explanation pages.
-  - label: Kriterion participant CLI and API documentation
-    url: https://github.com/Kriterion-cc/kriterion-cli
-    description: Inspect the public source, Diátaxis Markdown, OpenAPI specification, and past releases.
-  - label: Public challenge package and starter
-    url: https://github.com/Kriterion-cc/kriterion-challenge/tree/main/bn254-scalar-multiplication
-    description: The formal library, pinned Lean dependencies, local tests, and starter submission.
-  - label: Local ArgoMAC baseline proof map
+    description: The download page provides platform binaries and checksum commands.
+  - label: Challenge package
+    url: https://github.com/Kriterion-cc/kriterion-challenge/tree/875a8a5e0485cf9af25129227dd062c1fdb0fda5/bn254-scalar-multiplication
+    description: The package contains the formal library, build configuration, tests, and baseline submodule.
+  - label: Formal solution requirements
+    url: https://github.com/Kriterion-cc/kriterion-challenge/blob/3322a36abd962aa5960e65d7f2d8b9f72478d1e3/bn254-scalar-multiplication/formal/Solution.lean
+    description: Kriterion.Solution defines the construction data and all required proofs.
+  - label: Privacy experiments and machine protocol
+    url: https://github.com/Kriterion-cc/kriterion-challenge/blob/3322a36abd962aa5960e65d7f2d8b9f72478d1e3/bn254-scalar-multiplication/formal/Security/AdaptivePrivacy.lean
+    description: The formal definitions specify the adaptive games, oracle consistency, bit protocol, and combined advantage bound.
+  - label: Simulator machine and cost model
+    url: https://github.com/Kriterion-cc/kriterion-challenge/blob/3322a36abd962aa5960e65d7f2d8b9f72478d1e3/bn254-scalar-multiplication/formal/Cryptography/BoundedMachine.lean
+    description: The interpreter defines the instructions, accumulated cost, and query-dependent budget.
+  - label: ArgoMAC baseline proof map
     url: https://github.com/Kriterion-cc/argomac-lean/blob/6796e28666eeacd04bf67232b2feb31b222169c0/Proof/README.md
-    description: The baseline proof structure, shared-slot privacy proof, arithmetic cost bound, and acceptance tests.
+    description: The proof map connects the baseline construction to correctness, privacy, Lamport compatibility, and ciphertext size.
   - label: BaBe implementation
-    url: https://github.com/babylonlabs-io/BaBe
-    description: The Rust implementation of BaBe, including the ArgoMAC garbling code and timing tools.
+    url: https://github.com/babylonlabs-io/BaBe/tree/fd4d94730b6cb4e994bdbe952933fe2780cd73ee
+    description: The Rust source supplies implementation background for BaBe and ArgoMAC.
   - label: BaBe paper source
-    url: https://github.com/babylonlabs-io/BaBe.latex/tree/e2dcf4d540b2708e13cd21090df759051119a116
-    description: The pinned source. preliminaries.tex defines Lamport checks. gc_argomac_new.tex, gc_argomac_base7.tex, gc_privacy.tex, and gc_optimizations.tex define the construction and proof.
+    url: https://github.com/babylonlabs-io/BaBe.latex/tree/e2dcf4d540b2708e13cd21090df759051119a116/Latex
+    description: The paper source supplies the garbling definitions and ArgoMAC construction. The pinned challenge library defines the requirements of this challenge.
 reviewer: {model: openai/gpt-5, effort: low}
 criteria:
   - {id: ciphertext_bytes, by: eval, fn: Kriterion.Benchmark.ciphertextBytes, unit: bytes, direction: lower}
