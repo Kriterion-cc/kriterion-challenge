@@ -10,7 +10,14 @@ They can also build a starter submission locally before they submit a pinned Git
 - [BN254 scalar multiplication](bn254-scalar-multiplication/README.md)
 
 Each challenge directory contains its statement, formal library, dependency pins, tests, and starter submission.
-The BN254 challenge also contains the complete [ArgoMAC source and proofs](bn254-scalar-multiplication/argomac-lean/README.md).
+Each new challenge uses a separate directory.
+
+You must initialize the pinned starter submodules after checkout:
+
+```sh
+git submodule update --init --recursive
+```
+The BN254 challenge pins the [ArgoMAC source and proofs](bn254-scalar-multiplication/argomac-lean/README.md).
 
 ## Participant CLI
 
