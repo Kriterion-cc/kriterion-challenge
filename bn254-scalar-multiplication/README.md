@@ -12,75 +12,19 @@ The baseline submodule pins `Kriterion-cc/argomac-lean`.
 The local test overrides its Git dependency with the local challenge library.
 Its [source record](argomac-lean/UPSTREAM.md) identifies the original repository.
 
-## Simulator budget
+## Problem and rules
 
-The local obligation requires a finite probabilistic arithmetic machine.
-Its budget is `B(q) = 64q² + 134,217,728q + 70,368,744,177,664` instructions.
-Here `q` counts the oracle queries that the adversary has made.
-The interpreter uses one counter for setup, both stages, and all oracle responses.
-The counter includes the control table and each fair random bit.
-The machine starts with zero registers, zero RAM, and empty binary stacks.
-The machine has no external function calls.
+The `statement` field in [challenge.yaml](challenge.yaml) states the complete problem.
+It defines the target function, Lamport labels, correctness equation, privacy experiments,
+simulator machine, public encoding, score, and verification rules.
+The `references` field links each formal requirement to its pinned source.
+The statement keeps the field and group certificate premises explicit.
 
-The budget uses the local baseline's fixed arithmetic instructions.
-The [complete phase bound](argomac-lean/Proof/Privacy/Simulator/Arithmetic/CompiledPhaseCost.lean)
-covers setup, both public query phases, the online phase, and the control table.
-Lean proves that their sum fits this polynomial:
-
-```text
-B(q) = 64*q^2 + 2^27*q + 2^46
-```
-
-The proof uses the query count at each phase.
-The sampler uses at most 256 attempts for each bounded draw.
-The [sampling bound](argomac-lean/Proof/Privacy/Simulator/Arithmetic/SharedFiniteSourceDecision.lean)
-accounts for sampling failures in the privacy allowance.
-Lean proves the complete link between the machine and the ideal experiment.
-Authors must prove compliance with the new model.
-This budget specifies instructions, not processor time or Turing-machine steps.
-
-The machine has sixteen 256-bit registers and RAM with 256-bit addresses.
-The machine also has four binary stacks for its bit protocol.
-Each instruction costs one unit.
-The fixed instructions support these operations:
-
-- The word instructions perform arithmetic modulo `2^256`, bit operations, shifts, and comparison.
-- The field instructions perform addition, subtraction, multiplication, and inversion in either BN254 field.
-- The group instruction adds two BN254 points. It rejects invalid point encodings.
-- The memory instructions read or write one RAM word. The constant instruction writes one register.
-- The control instructions branch or halt.
-- The stack instructions push or pop one bit. The coin instruction samples one fair bit.
-
-The program counter has at most 256 bits.
-Each control-table entry costs one unit before execution.
-Each entry contains a fixed number of bounded operands.
-The instruction set contains no arbitrary function or distribution values.
-Each request starts at instruction zero.
-Stack zero receives the request.
-Stack three returns the response.
-The registers, RAM, and stacks one and two retain private state between requests.
-[AdaptivePrivacy.lean](formal/Security/AdaptivePrivacy.lean) fixes the request tags and bit order.
-The protocol passes only public data, the selected input, and its output.
-
-The interpreter aborts on budget exhaustion or an incorrect reply length.
-The privacy proof gives one allowance to both simulation error and implementation error.
-The allowance is `(Q + 1) / 2^100`.
-Here `Q` is the sum of the adversary's two declared query budgets.
-The adversary's local computation remains unrestricted.
-`adaptivePrivacyTransfer` proves the resulting real-to-machine bound.
-
-The revision retains the existing circuit types and byte encoding.
-The machine must produce the complete canonical public bytes.
-The decoder supplies only the adversary's public view.
-The machine never receives the decoded value.
-The protocol represents each finite oracle index by its fixed enumeration.
-The single `AdaptivePrivacy` property requires both the abstract simulator and its bounded machine.
-The older `ConcreteAdaptivePrivacy` predicate remains an abstract game bound for proof reuse.
-`Solution` checks only the combined `AdaptivePrivacy` property.
-Old submissions need a new bounded simulator proof.
-
-The published library pin selects the checked revision of this obligation.
-The starter pins the published library commit.
+The simulator budget is `B(q) = 64*q^2 + 134217728*q + 70368744177664`.
+The counter includes setup, the control table, both stages, random bits, and oracle responses.
+The privacy allowance is `(Q + 1) / 2^100` for the combined abstract and machine errors.
+The [baseline phase bound](argomac-lean/Proof/Privacy/Simulator/Arithmetic/CompiledPhaseCost.lean)
+proves that the complete arithmetic simulator fits this budget.
 
 ## Build the public library
 
@@ -101,7 +45,7 @@ The test also compiles the baseline acceptance tests in `tests/AdaptivePrivacy.l
 The test requires Python 3.
 The first dependency download requires network access.
 The baseline must pass this test before deployment.
-`Submission.solution` proves the revised obligation with the concrete bounded machine.
+`Submission.solution` supplies the complete bounded simulator proof.
 
 ## Start a submission
 
