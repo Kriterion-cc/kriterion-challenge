@@ -129,13 +129,19 @@ statement: |
   A submission must pass every verifier check and produce its metric before it can enter the ranking.
   The AI note supplies advice and cannot change verification or rank.
 
-  ### Rewards
-
-  The first verified submission during the submission window earns USD 100.
-  At closing, the verified submission with the lowest ciphertext byte count earns USD 400.
-  One author can earn both rewards.
-  If verified submissions tie, the one that Kriterion accepted first wins.
-  Babylon Labs pays each reward after the final eligibility check.
+rewards:
+  currency: USD
+  awards:
+    - label: First verified
+      amount: 100
+      rule: First verified submission during the submission window.
+    - label: Best verified
+      amount: 400
+      rule: Verified submission with the lowest ciphertext byte count at closing.
+  terms:
+    - One author can earn both rewards.
+    - If verified submissions tie, the one that Kriterion accepted first wins.
+    - Babylon Labs pays each reward after the final eligibility check.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
   commit: "3322a36abd962aa5960e65d7f2d8b9f72478d1e3"
