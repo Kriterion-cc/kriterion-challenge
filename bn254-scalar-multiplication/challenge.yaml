@@ -4,9 +4,9 @@ submissions_open_at: "2026-09-17T03:00:00Z"
 submissions_close_at: "2026-10-03T03:00:00Z"
 submission_access: permissionless
 statement: |
-  Authors must construct a computable garbled circuit for BN254 scalar multiplication.
+  Authors must construct a garbled circuit for BN254 scalar multiplication.
   The objective minimizes the complete public ciphertext size in bytes.
-  A submission must define `Submission.solution : Kriterion.Solution` and prove every requirement below.
+  A submission must define `Submission.solution : Kriterion.Solution` and prove the four properties below.
   The pinned Lean library defines the exact types, experiments, and machine semantics.
 
   ### Target function
@@ -23,120 +23,117 @@ statement: |
   The point type includes the identity element.
   The input type contains field elements; it does not specify a parser for external coordinate bytes.
 
-  The solution must work for every `FieldCertificate` and `GroupCertificate` in the library.
-  These certificates assume that `p` is prime, that `r` annihilates every curve point, and that the declared endomorphism has its stated scalar action.
-  These premises remain explicit assumptions of the challenge.
-  The library proves that `r` is prime.
+  ### Computable garbling
 
-  ### Construction and correctness
-
+  This property requires executable algorithms that create the ciphertext, encode an input, and evaluate the result.
   The construction supplies `Garble`, `Encode`, and `Evaluate` through the `scheme` field.
-  For a public parameter `n`, scalar `k`, and random tape `ρ`, `Garble(n, k, ρ)` returns a public value `C` and a secret encoding key `K`.
-  The finite random tape contains only private coins.
+  For a parameter `n`, scalar `k`, private tape `ρ`, and public oracle, `Garble(n, k, (ρ, oracle))` returns a public value `C` and a secret encoding key `K`.
+  `Evaluate` receives the public oracle, `C`, `u`, and the selected labels.
+  The finite tape contains only private coins.
   The real experiment samples these coins uniformly and independently of the public oracle.
   The library owns one fixed lazy oracle in each experiment.
   This oracle supplies independent families of 128-bit permutations, their inverses, and an independent uniform hash function.
-  Garbling and evaluation use indexed query programs.
-  These programs can read public oracle values only through query instructions.
-  The program indices bound every execution path.
-  The evaluator and adversary use the same public oracle interface.
+  The construction and adversary use the same public oracle interface.
 
-  The input encoding uses 508 bits: the 254 little-endian bits of `x`, followed by those of `y`.
+  Garbling and evaluation must use indexed query programs.
+  These programs can read public oracle values only through query instructions.
+  The submission must prove that each program equals its `scheme` algorithm for every argument and complete public oracle.
+  The program indices bound the query count on every execution path.
+  The garbling query bound must not exceed 1,759,967.
+  The evaluation query bound must not exceed 1,055,879.
+  These bounds are acceptance gates; they do not set the rank or measure processor time.
+  The exact reported 32-byte pad requires `2^101` hash queries and exceeds both gates.
+  The computability check applies to the construction code; proof-only definitions can use noncomputable mathematics.
+
+  ### Lamport compatibility
+
+  This property requires the input encoding to contain exactly one selected 128-bit label for each of the 508 input bits.
+  The input bits are the 254 little-endian bits of `x`, followed by those of `y`.
   The encoding key supplies 508 pairs of 128-bit blocks.
-  `Encode(K, u)` must equal the vector that selects one block from each pair with the corresponding input bit.
-  This equality applies to the entire output of `Encode`; the output contains no extra payload.
-  The resulting vector has the exact type `LamportSignature`.
+  The `lamportCompatible` proof must show that `Encode(K, u)` selects one block from each pair with the corresponding input bit.
+  This equality covers every key and input and the entire output of `Encode`.
+  The output has the exact type `LamportSignature` and contains no extra payload.
   The library proves that these labels satisfy the corresponding Lamport hash locks for an explicit 160-bit hash function.
   This hash-lock theorem does not prove an implementation of Bitcoin HASH160.
 
-  `Evaluate` receives the public oracle, `C`, the input `u`, and the 508 selected labels.
+  ### Correctness
+
+  This property requires honest evaluation to return the target result for every input, with no probability of error.
   The `functionCorrect` proof must identify the target with `f_k`.
-  The `perfectCorrectness` proof must establish the following equation for every parameter, scalar, private tape, public oracle, and input:
+  The `perfectCorrectness` proof must establish this equation for every parameter, nonzero scalar, private tape, complete public oracle, and input:
 
-  `Evaluate(oracle, C, u, Encode(K, u)) = some (f_k(u))`.
+  `Evaluate(oracle, C, u, Encode(K, u)) = some (f_k(u))`, where `(C, K) = Garble(n, k, (ρ, oracle))`.
 
-  Thus `some none` denotes correct rejection of an off-curve input.
+  The result `some none` denotes correct rejection of an off-curve input.
   The outer `none` denotes evaluation failure and cannot satisfy correctness.
+  The solution must work for every `FieldCertificate` and `GroupCertificate` in the library.
+  These certificates assume that `p` is prime and that `r` annihilates every curve point.
+  They also assume that the declared endomorphism has its stated scalar action.
+  These premises remain explicit assumptions of the challenge.
+  The library proves that `r` is prime.
 
   ### Adaptive privacy
 
+  This property requires a simulator to reproduce the public view within a fixed error bound without receiving the secret scalar.
   The adversary receives `C` before it selects `u`.
-  The adversary can query the public oracles before and after it receives the selected labels.
+  It can query the public oracle before and after it receives the selected labels.
   Its closed machine pays for arithmetic, sampling, and oracle queries.
-  Its work bound `T` includes its code size and both stage fuel limits.
+  Its work bound `T` is its code size plus both stage fuel limits.
   Each instruction consumes fuel. A stage aborts when its fuel ends.
   The challenge fixes the auxiliary input type to `Unit`.
 
-  The solution must provide one finite probabilistic arithmetic machine for all scalars, parameters, and adversaries.
+  One finite probabilistic arithmetic machine must serve all scalars, parameters, and adversaries.
   The first simulator stage receives only `n` and the fixed ciphertext byte count `b`.
   The second stage receives the retained state, the selected input `u`, and `f_k(u)`.
   Neither stage receives `k` directly.
-  The simulator can use private coins and program fresh oracle answers.
+  The simulator can use private coins and query, inspect, or program the fixed oracle.
   The fixed oracle answers every adversary query without a simulator response.
   A permutation programming call must use both a fresh input and a fresh output.
   A hash programming call must use a fresh input; hash outputs can collide.
   A failed programming call aborts the ideal experiment.
 
-  Let `R` and `M` denote the real and machine ideal experiments.
-  For two experiments `X` and `Y`, define `Adv(X,Y) = |Pr[X = true] - Pr[Y = true]|`.
-  The `adaptivePrivacy` proof must establish
-
-  `Adv(R,M) * 2^100 ≤ T + 1`.
-
-  This bound covers every adversary, scalar, and parameter.
-  The same allowance includes sampling error and machine aborts.
-  The proof may use internal hybrid experiments.
-  The obligation requires the bound against the machine experiment.
-
-  ### Simulator machine
-
-  The machine has sixteen 256-bit registers, RAM with 256-bit addresses, and four binary stacks.
-  The machine starts with zero registers, zero RAM, and empty stacks.
+  The simulator has sixteen 256-bit registers, RAM with 256-bit addresses, and four binary stacks.
+  It starts with zero registers, zero RAM, and empty stacks before the protocol supplies its input.
   Its fixed instructions support word arithmetic, bit operations, comparison, BN254 field arithmetic, point addition, memory access, constants, branches, stack operations, fair random bits, and halts.
   Point addition rejects invalid point encodings.
-  Each instruction has a fixed number of bounded operands.
+  Each instruction has a fixed number of bounded operands, including fixed register operands for oracle instructions.
   The program counter has at most 256 bits.
   The instruction set permits no arbitrary Lean callbacks, external functions, or arbitrary probability distributions.
-
-  The machine pays one unit per control-table entry and one unit per executed instruction.
-  Its code size and both stage fuel limits must fit the constant allowance `2^60`.
+  The simulator pays one unit per control-table entry and one unit per executed instruction.
+  Its code size plus both stage fuel limits must not exceed `2^60`.
   This allowance includes setup, every fair random bit, and every simulator oracle instruction.
-  The simulator instructions can query, inspect, or program the fixed oracle.
-  Each instruction has fixed register operands.
   This budget measures the specified machine operations, not processor time.
   The fixed bit protocol supplies the public parameter, byte count, selected input, and output.
-  The machine must return the complete canonical public bytes and exactly 508 labels.
-  The decoder supplies only the adversary's public view; the machine does not receive the decoded public value.
-  The interpreter aborts when the machine exhausts its budget or returns an invalid response.
+  The simulator must return the complete canonical public bytes and exactly 508 labels.
+  The decoder supplies only the adversary's public view; the simulator does not receive the decoded public value.
+  The interpreter aborts when the simulator exhausts its budget or returns an invalid response.
   An aborted machine experiment returns `false`.
+
+  Let `R` and `M` denote the real and machine ideal experiments.
+  For two experiments `X` and `Y`, define `Adv(X,Y) = |Pr[X = true] - Pr[Y = true]|`.
+  The `adaptivePrivacy` proof must establish `Adv(R,M) * 2^100 ≤ T + 1`.
+  The extra `1` is the decision allowance.
+  This bound covers every adversary, scalar, and parameter, including sampling error and machine aborts.
+  The proof may use internal hybrid experiments, but it must establish the bound against the machine experiment.
 
   ### Public encoding and score
 
   The solution supplies a byte encoder and decoder for its complete public value.
-  For every public value `C` and byte suffix `t`, the encoding must satisfy
-
-  `decode(encode(C) ++ t) = some (C, t)`.
-
-  Every generated public value must encode to the same length `b`, for every parameter, scalar, and tape.
+  For every public value `C` and byte suffix `t`, the encoding must satisfy `decode(encode(C) ++ t) = some (C, t)`.
+  Every generated public value must encode to the same length `b`, for every parameter, scalar, private tape, and public oracle.
   The encoding must include every construction-dependent public field that evaluation needs.
   The score excludes secret encoding keys, selected input labels, and fixed challenge data.
   The verifier evaluates `Kriterion.Benchmark.ciphertextBytes` to obtain `b`.
   Lower byte counts rank first.
-  The garbling query bound must not exceed 1,759,967.
-  The evaluation query bound must not exceed 1,055,879.
-  These two query metrics are acceptance gates; they do not set the rank.
-  The exact reported 32-byte pad requires `2^101` hash queries and exceeds both gates.
   The public baseline supplies a verified reference construction; a submission can use a different construction that satisfies the same requirements.
 
   ### Verification and acceptance
 
   The verifier uses the library commit, Lean toolchain, and dependencies pinned in this challenge.
-  The verifier checks the repository layout, Lean build, `Kriterion.Solution` obligation, axiom dependencies, and executable construction.
+  It checks the repository layout, Lean build, `Kriterion.Solution` obligation, axiom dependencies, and executable construction.
   The axiom audit permits only `propext`, `Classical.choice`, and `Quot.sound`.
   The BN254 axiom list is empty until a cryptographic review establishes concrete bounds for this machine model.
-  The computability check applies to the construction code; proof-only definitions can use noncomputable mathematics.
-  The four published properties are computable garbling, Lamport compatibility, correctness, and adaptive privacy.
-  A submission must pass every verifier check and produce its metric before it can enter the ranking.
+  A submission must pass every verifier check and produce all three metrics before it can enter the ranking.
   The AI note supplies advice and cannot change verification or rank.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
