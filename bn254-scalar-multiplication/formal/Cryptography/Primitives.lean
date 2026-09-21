@@ -27,6 +27,101 @@ structure OracleSpec where
 abbrev OracleHandler (oracle : OracleSpec.{uQuery, uAnswer}) (State : Type uState) :=
   ∀ query, State → oracle.Answer query × State
 
+/-- A construction computes locally and reads the oracle only through query nodes. -/
+inductive QueryProgram (oracle : OracleSpec.{0, 0}) (Result : Type) : Nat → Type 1
+  | pure {budget : Nat} (result : Result) : QueryProgram oracle Result budget
+  | query {budget : Nat} (request : oracle.Query)
+      (next : oracle.Answer request → QueryProgram oracle Result budget) :
+      QueryProgram oracle Result (budget + 1)
+
+namespace QueryProgram
+
+/-- This interpreter uses one fixed oracle. -/
+def eval {oracle : OracleSpec.{0, 0}} {Result : Type} (answer : ∀ q, oracle.Answer q) :
+    {budget : Nat} → QueryProgram oracle Result budget → Result
+  | _, .pure result => result
+  | _, .query request next => eval answer (next (answer request))
+
+def map {oracle : OracleSpec.{0, 0}} {First Second : Type} (f : First → Second) :
+    {budget : Nat} → QueryProgram oracle First budget → QueryProgram oracle Second budget
+  | _, .pure result => .pure (f result)
+  | _, .query request next => .query request (fun answer => map f (next answer))
+
+def castBudget {oracle : OracleSpec.{0, 0}} {Result : Type} {first second : Nat}
+    (equal : first = second) (program : QueryProgram oracle Result first) :
+    QueryProgram oracle Result second := equal ▸ program
+
+@[simp] theorem eval_castBudget {oracle : OracleSpec.{0, 0}} {Result : Type}
+    (answer : ∀ q, oracle.Answer q) {first second : Nat} (equal : first = second)
+    (program : QueryProgram oracle Result first) :
+    (program.castBudget equal).eval answer = program.eval answer := by cases equal; rfl
+
+def raise {oracle : OracleSpec.{0, 0}} {Result : Type} (extra : Nat) :
+    {budget : Nat} → QueryProgram oracle Result budget → QueryProgram oracle Result (budget + extra)
+  | _, .pure result => .pure result
+  | _, .query request next =>
+      (QueryProgram.query request (fun answer => raise extra (next answer))).castBudget
+        (by omega)
+
+def bind {oracle : OracleSpec.{0, 0}} {First Second : Type} {second : Nat}
+    (next : First → QueryProgram oracle Second second) :
+    {first : Nat} → QueryProgram oracle First first → QueryProgram oracle Second (first + second)
+  | first, .pure result => (raise first (next result)).castBudget (Nat.add_comm _ _)
+  | _, .query request rest =>
+      (QueryProgram.query request (fun answer => bind next (rest answer))).castBudget
+        (by omega)
+
+@[simp] theorem eval_map {oracle : OracleSpec.{0, 0}} {First Second : Type}
+    (answer : ∀ q, oracle.Answer q) (f : First → Second) {budget : Nat}
+    (program : QueryProgram oracle First budget) :
+    (program.map f).eval answer = f (program.eval answer) := by
+  induction program with
+  | pure result => rfl
+  | query request next ih => exact ih (answer request)
+
+@[simp] theorem eval_raise {oracle : OracleSpec.{0, 0}} {Result : Type}
+    (answer : ∀ q, oracle.Answer q) (extra : Nat) {budget : Nat}
+    (program : QueryProgram oracle Result budget) :
+    (program.raise extra).eval answer = program.eval answer := by
+  induction program with
+  | pure result => rfl
+  | query request next ih => simp only [raise, eval_castBudget, eval, ih]
+
+@[simp] theorem eval_bind {oracle : OracleSpec.{0, 0}} {First Second : Type}
+    (answer : ∀ q, oracle.Answer q) {first second : Nat}
+    (program : QueryProgram oracle First first)
+    (next : First → QueryProgram oracle Second second) :
+    (program.bind next).eval answer = (next (program.eval answer)).eval answer := by
+  induction program with
+  | pure result => simp only [bind, eval_castBudget, eval_raise, eval]
+  | query request rest ih => simp only [bind, eval_castBudget, eval, ih]
+
+def ofFn {oracle : OracleSpec.{0, 0}} {Result : Type} {budget : Nat} :
+    (count : Nat) → (Fin count → QueryProgram oracle Result budget) →
+      QueryProgram oracle (Vector Result count) (count * budget)
+  | 0, _ => .pure #v[]
+  | count + 1, program =>
+      ((program 0).bind fun value =>
+        (ofFn count (fun index => program index.succ)).map fun values =>
+          Vector.ofFn (Fin.cases value values.get)).castBudget (by simp [Nat.add_mul, Nat.add_comm])
+
+@[simp] theorem eval_ofFn {oracle : OracleSpec.{0, 0}} {Result : Type}
+    (answer : ∀ q, oracle.Answer q) {budget : Nat} (count : Nat)
+    (program : Fin count → QueryProgram oracle Result budget) :
+    (ofFn count program).eval answer = Vector.ofFn (fun index => (program index).eval answer) := by
+  induction count with
+  | zero => rfl
+  | succ count ih =>
+      simp only [ofFn, eval_castBudget, eval_bind, eval_map, ih]
+      apply Vector.ext
+      intro index valid
+      simp only [Vector.getElem_ofFn]
+      rcases Fin.eq_zero_or_eq_succ (⟨index, valid⟩ : Fin (count + 1)) with zero | ⟨index, equal⟩
+      · rw [zero]; rfl
+      · rw [equal]; simp [Vector.get]; rfl
+
+end QueryProgram
+
 /-- An oracle program uses at most the indexed number of queries. -/
 inductive OracleProgram (oracle : OracleSpec.{uQuery, uAnswer}) (Result : Type uResult) :
     Nat → Type (max uQuery uAnswer uResult + 1)
@@ -171,6 +266,20 @@ theorem execute_eq_run {oracle : OracleSpec.{vQuery, vAnswer}} {Result : Type vR
       simpa only [execute_query, run_query] using ih (handler request state).1 (handler request state).2
   | sample distribution next ih => simp only [execute_sample, run_sample, ih]
 
+/-- This operation changes the result without adding oracle queries. -/
+noncomputable def map {oracle : OracleSpec} {First Second : Type} (f : First → Second) :
+    {budget : Nat} → OracleProgram oracle First budget → OracleProgram oracle Second budget
+  | _, .pure result => .pure (result.map f)
+  | _, .query request next => .query request (fun answer => map f (next answer))
+  | _, .sample distribution next => .sample distribution (fun value => map f (next value))
+
+/-- This operation adds one unused query to the allowance. -/
+def weaken {oracle : OracleSpec} {Result : Type} :
+    {budget : Nat} → OracleProgram oracle Result budget → OracleProgram oracle Result (budget + 1)
+  | _, .pure result => .pure result
+  | _, .query request next => .query request (fun answer => weaken (next answer))
+  | _, .sample distribution next => .sample distribution (fun value => weaken (next value))
+
 universe vStateTwo
 
 /-- VCV-io transports a state projection through every query and private sample. -/
@@ -202,6 +311,25 @@ theorem run_project {oracle : OracleSpec.{vQuery, vAnswer}} {Result : Type vResu
 
 
 end OracleProgram
+
+namespace QueryProgram
+
+noncomputable def toOracleProgram {oracle : OracleSpec.{0, 0}} {Result : Type} :
+    {budget : Nat} → QueryProgram oracle Result budget → OracleProgram oracle Result budget
+  | _, .pure result => .pure (PMF.pure result)
+  | _, .query request next => .query request (fun answer => toOracleProgram (next answer))
+
+theorem run_toOracleProgram {oracle : OracleSpec.{0, 0}} {Result State : Type}
+    (answer : ∀ q, oracle.Answer q) {budget : Nat}
+    (program : QueryProgram oracle Result budget) (state : State) :
+    program.toOracleProgram.run (fun q s => (answer q, s)) state =
+      PMF.pure (program.eval answer, state) := by
+  induction program with
+  | pure result => simp [toOracleProgram, OracleProgram.run_pure, PMF.pure_map, eval]
+  | query request next ih => simp only [toOracleProgram, OracleProgram.run_query, eval, ih]
+
+end QueryProgram
+
 
 abbrev Block := BitVec 128
 

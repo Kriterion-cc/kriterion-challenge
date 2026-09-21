@@ -14,43 +14,6 @@ namespace Kriterion.GarbledCircuit
 open Cryptography.Assumptions
 open Cryptography
 
-/-- This invariant enforces the public interface and preserves earlier answers.
-See `gc_rpm_proof.tex`, "Transcripts and Compatibility", and
-`preliminaries.tex`, `def:pRPM`. The challenge also checks the simulator's state updates. -/
-def OracleSimulation {FixedIndex EncIndex Input Output Public Labels Topology State : Type}
-    (simulator : Simulator Input Output Public Labels Topology State)
-    (handler : OracleHandler (publicOracleSpec FixedIndex EncIndex) State)
-    (view : State → PublicOracle FixedIndex EncIndex) : Prop :=
-  ∃ valid : State → Prop, ∃ seen : State → PublicQuery FixedIndex EncIndex → Prop,
-    (∀ parameter topology result, result ∈ (simulator.simulateGarble parameter topology).support →
-      valid result.2) ∧
-    (∀ query state, valid state →
-      (handler query state).1 = publicAnswer (view state) query ∧
-      view (handler query state).2 = view state ∧ valid (handler query state).2 ∧
-      seen (handler query state).2 query ∧
-      ∀ prior, seen state prior → seen (handler query state).2 prior) ∧
-    (∀ state input output result, valid state →
-      result ∈ (simulator.simulateEncode state input output).support →
-      valid result.2 ∧ ∀ query, seen state query →
-        seen result.2 query ∧ publicAnswer (view result.2) query = publicAnswer (view state) query)
-
-/-- A label adapter preserves every oracle-state obligation. -/
-theorem OracleSimulation.mapLabels {FixedIndex EncIndex Input Output Public Labels Topology
-    State Wire NewTopology : Type}
-    {simulator : Simulator Input Output Public Labels Topology State}
-    {handler : OracleHandler (publicOracleSpec FixedIndex EncIndex) State}
-    {view : State → PublicOracle FixedIndex EncIndex}
-    (rules : OracleSimulation simulator handler view)
-    (pack : Labels → Wire) (restore : NewTopology → Topology) :
-    OracleSimulation (simulator.mapLabels pack restore) handler view := by
-  obtain ⟨valid, seen, initial, query, encode⟩ := rules
-  refine ⟨valid, seen, fun parameter topology => initial parameter (restore topology), query, ?_⟩
-  intro state input output result stateValid member
-  dsimp only [Simulator.mapLabels] at member
-  rw [PMF.support_map] at member
-  obtain ⟨original, originalMember, rfl⟩ := member
-  exact encode state input output original stateValid originalMember
-
 universe u uAux
 
 /-- An adaptive adversary selects its input after it receives the public circuit. -/
@@ -132,29 +95,6 @@ def ConcreteAdaptivePrivacy
         (idealGame scheme topology simulator idealOracle adversary parameter
           (circuit parameter) (auxiliary parameter)))
 
-/-- A public label map preserves the bound in `preliminaries.tex`, `def:garbling-scheme`.
-The adapter may also replace the simulator's topology representation. -/
-theorem ConcreteAdaptivePrivacy.mapLabels
-    {oracle : OracleSpec} {Circuit Input Output Randomness Public Key Labels Wire
-      EvaluationOracle Topology NewTopology State Aux : Type}
-    {scheme : GarbledCircuit Circuit Input Output Randomness Public Key Labels EvaluationOracle}
-    {topology : Circuit → Topology} {simulator : Simulator Input Output Public Labels Topology State}
-    {randomTape : Nat → PMF Randomness} {realOracle : OracleHandler oracle Randomness}
-    {idealOracle : OracleHandler oracle State} {bits : Nat}
-    (privacy : ConcreteAdaptivePrivacy (Aux := Aux) scheme topology simulator randomTape
-      realOracle idealOracle bits)
-    (pack : Labels → Wire) (unpack : Input → Wire → Labels)
-    (newTopology : Circuit → NewTopology) (restore : NewTopology → Topology)
-    (same : ∀ circuit, restore (newTopology circuit) = topology circuit) :
-    ConcreteAdaptivePrivacy (Aux := Aux) (scheme.mapLabels pack unpack) newTopology
-      (simulator.mapLabels pack restore) randomTape realOracle idealOracle bits := by
-  intro adversary circuit auxiliary parameter
-  let original : AdaptiveAdversary oracle Input Public Labels Aux :=
-    ⟨adversary.State, adversary.firstQueryBudget, adversary.secondQueryBudget,
-      adversary.chooseInput, fun parameter circuit labels => adversary.decide parameter circuit (pack labels)⟩
-  simpa only [realGame, idealGame, GarbledCircuit.mapLabels, Simulator.mapLabels, same, PMF.bind_map, Function.comp_def, adversaryWork, original]
-    using privacy original circuit auxiliary parameter
-
 namespace SimulatorProtocol
 
 open BN254
@@ -199,23 +139,6 @@ def answer {FixedIndex EncIndex : Type} (request : PublicQuery FixedIndex EncInd
       (words 128 1 wire).map fun values => values[0]
   | .hash _ => (words 128 2 wire).map fun values => (values[0], values[1])
 
-/-- The adversary keeps its original query budget. Only the simulator pays machine costs. -/
-noncomputable def runProgram [BN254.FieldCertificate] {FixedIndex EncIndex Result : Type}
-    [Fintype FixedIndex] [Fintype EncIndex] (machine : BoundedMachine.Machine) :
-    {budget : Nat} → OracleProgram (publicOracleSpec FixedIndex EncIndex) Result budget →
-      BoundedMachine.State → OptionT PMF (Result × BoundedMachine.State)
-  | _, .pure distribution, state => do
-      let value ← liftM distribution
-      pure (value, state)
-  | _, .sample distribution next, state => do
-      let value ← liftM distribution
-      runProgram machine (next value) state
-  | _, .query request next, state => do
-      let (wire, updated) ← OptionT.mk (BoundedMachine.respond machine
-        ([true, false] ++ query request) { state with queries := state.queries + 1 })
-      let value ← OptionT.mk (PMF.pure (answer request wire))
-      runProgram machine (next value) updated
-
 /-- The decoder supplies only the adversary's public view.
 The canonical check requires the machine to produce the complete public bytes. -/
 def publicValue {Public : Type} (encoding : Encoding Public) (bytes : Nat)
@@ -225,60 +148,99 @@ def publicValue {Public : Type} (encoding : Encoding Public) (bytes : Nat)
   let (value, tail) ← encoding.decode raw
   if tail.isEmpty && encoding.encode value == raw then some value else none
 
-/-- The simulator receives no scalar. Every failed request aborts the ideal experiment. -/
-noncomputable def idealGame [FieldCertificate]
-    {FixedIndex EncIndex Randomness Public Key Oracle Aux : Type}
-    [Fintype FixedIndex] [Fintype EncIndex]
-    (scheme : GarbledCircuit NonZeroScalar AffineInput (Option Point) Randomness Public
-      Key LamportSignature Oracle) (encoding : Encoding Public) (bytes : Nat)
-    (machine : BoundedMachine.Machine)
-    (adversary : AdaptiveAdversary (publicOracleSpec FixedIndex EncIndex)
-      AffineInput Public LamportSignature Aux)
-    (parameter : Nat) (scalar : NonZeroScalar) (auxiliary : Aux) : PMF Bool :=
-  let experiment : OptionT PMF Bool := do
-    let (wire, initial) ← OptionT.mk (BoundedMachine.respond machine
-      ([false, false] ++ natural parameter ++ natural bytes) (BoundedMachine.initial machine))
-    let circuit ← OptionT.mk (PMF.pure (publicValue encoding bytes wire))
-    let (selected, chosen) ← runProgram machine (adversary.chooseInput parameter circuit auxiliary) initial
-    let (wire, encoded) ← OptionT.mk (BoundedMachine.respond machine
-      ([false, true] ++ affine selected.1 ++ output (scheme.function scalar selected.1)) chosen)
-    let labels ← OptionT.mk (PMF.pure (words 128 508 wire))
-    let (decision, _) ← runProgram machine
-      (adversary.decide parameter circuit labels auxiliary selected.2) encoded
-    pure decision
-  experiment.run.map (fun result => result.getD false)
-
 end SimulatorProtocol
 
 open BN254
-
-/-- Adaptive privacy includes the machine budget and every implementation error.
-One simulator and one machine serve every adversary and scalar. -/
-def AdaptivePrivacy [FieldCertificate]
-    {FixedIndex EncIndex Randomness Public Key Oracle State Aux : Type}
-    [Fintype FixedIndex] [Fintype EncIndex]
-    (scheme : GarbledCircuit NonZeroScalar AffineInput (Option Point) Randomness Public
-      Key LamportSignature Oracle) (encoding : Encoding Public) (bytes : Nat)
-    (randomTape : Nat → PMF Randomness)
-    (realOracle : OracleHandler (publicOracleSpec FixedIndex EncIndex) Randomness)
-    (idealOracle : OracleHandler (publicOracleSpec FixedIndex EncIndex) State)
-    (idealView : State → PublicOracle FixedIndex EncIndex) : Prop :=
-  ∃ simulator : Simulator AffineInput (Option Point) Public LamportSignature Nat State,
-  ∃ machine : BoundedMachine.Machine,
-    OracleSimulation simulator idealOracle idealView ∧
-    ∀ adversary : AdaptiveAdversary (publicOracleSpec FixedIndex EncIndex)
-        AffineInput Public LamportSignature Aux,
-      ∀ parameter scalar auxiliary,
-        let real := realGame scheme randomTape realOracle adversary parameter scalar auxiliary
-        let ideal := idealGame scheme (fun _ => bytes) simulator idealOracle adversary parameter scalar auxiliary
-        WorkPerAdvantage 100 (adversaryWork adversary parameter)
-          (advantage real ideal + advantage ideal
-            (SimulatorProtocol.idealGame scheme encoding bytes machine adversary parameter scalar auxiliary))
 
 /-- The shared allowance bounds the real experiment against the bounded machine. -/
 theorem adaptivePrivacyTransfer {real ideal bounded : PMF Bool} {work : Nat}
     (bound : WorkPerAdvantage 100 work (advantage real ideal + advantage ideal bounded)) :
     WorkPerAdvantage 100 work (advantage real bounded) :=
   le_trans (mul_le_mul_of_nonneg_right (advantageTriangle real ideal bounded) (by positivity)) bound
+
+/-- The machine receives public bytes and retains only its finite machine state. -/
+noncomputable def machineAdversary [FieldCertificate]
+    {FixedIndex EncIndex Public : Type} [Fintype FixedIndex] [Fintype EncIndex]
+    (encoding : Encoding Public) (machine : BoundedMachine.Adversary) :
+    AdaptiveAdversary (publicOracleSpec FixedIndex EncIndex) AffineInput Public LamportSignature Unit where
+  State := Option (BoundedMachine.Configuration (machine.size + 1))
+  firstQueryBudget := fun _ => machine.firstFuel
+  secondQueryBudget := fun _ => machine.secondFuel
+  chooseInput := fun parameter circuit _ =>
+    let wire := SimulatorProtocol.natural parameter ++
+      (encoding.encode circuit).flatMap (fun byte => SimulatorProtocol.bits 8 byte.val)
+    let memory : BoundedMachine.Memory := { bits := fun stack => if stack = 0 then wire else [] }
+    OracleProgram.map (fun result =>
+        ((match result with
+          | none => ⟨0, 0⟩
+          | some state => ⟨(state.memory.registers 0).toNat, (state.memory.registers 1).toNat⟩), result)) (machine.program machine.firstFuel ⟨0, memory⟩)
+  decide := fun _ _ labels _ state => match state with
+    | none => .pure (PMF.pure false)
+    | some state =>
+      let wire := labels.toList.flatMap (fun label => SimulatorProtocol.bits 128 label.toNat)
+      let memory := { state.memory with bits := Function.update state.memory.bits 0 wire }
+      OracleProgram.map (fun result => result.any (fun final => final.memory.registers 0 == 1))
+        (machine.program machine.secondFuel ⟨0, memory⟩)
+
+/-- The real game uses independent private coins and one fixed lazy oracle. -/
+noncomputable def lazyRealGame
+    {FixedIndex EncIndex Coins Circuit Input Public Key Labels Aux : Type}
+    [DecidableEq FixedIndex] [DecidableEq EncIndex]
+    (coins : Nat → PMF Coins) {budget : Nat}
+    (garble : Nat → Circuit → Coins → OracleProgram (publicOracleSpec FixedIndex EncIndex) (Public × Key) budget)
+    (encode : Key → Input → Labels)
+    (adversary : AdaptiveAdversary (publicOracleSpec FixedIndex EncIndex) Input Public Labels Aux)
+    (parameter : Nat) (circuit : Circuit) (auxiliary : Aux) : PMF Bool :=
+  (coins parameter).bind fun randomness =>
+    (LazyOracle.run (garble parameter circuit randomness) LazyOracle.empty).bind fun garbled =>
+      (LazyOracle.run (adversary.chooseInput parameter garbled.1.1 auxiliary) garbled.2).bind fun selected =>
+        (LazyOracle.run (adversary.decide parameter garbled.1.1
+          (encode garbled.1.2 selected.1.1) auxiliary selected.1.2) selected.2).map Prod.fst
+
+namespace LazySimulatorProtocol
+
+/-- The fixed oracle serves all adversary queries without invoking the simulator. -/
+noncomputable def idealGame [FieldCertificate]
+    {FixedIndex EncIndex Randomness Public Key Oracle Aux : Type}
+    [Fintype FixedIndex] [Fintype EncIndex] [DecidableEq FixedIndex] [DecidableEq EncIndex]
+    (scheme : GarbledCircuit NonZeroScalar AffineInput (Option Point) Randomness Public
+      Key LamportSignature Oracle) (encoding : Encoding Public) (bytes : Nat)
+    (machine : BoundedMachine.Simulator)
+    (adversary : AdaptiveAdversary (publicOracleSpec FixedIndex EncIndex)
+      AffineInput Public LamportSignature Aux)
+    (parameter : Nat) (scalar : NonZeroScalar) (auxiliary : Aux) : PMF Bool :=
+  let experiment : OptionT PMF Bool := do
+    let memory : BoundedMachine.Memory := { bits := fun stack =>
+      if stack = 0 then [false, false] ++ SimulatorProtocol.natural parameter ++ SimulatorProtocol.natural bytes else [] }
+    let (initial, oracle, _) ← OptionT.mk (machine.run machine.firstFuel ⟨0, memory⟩ LazyOracle.empty)
+    let circuit ← OptionT.mk (PMF.pure (SimulatorProtocol.publicValue encoding bytes (initial.memory.bits 3)))
+    let (selected, chosen) ← liftM (LazyOracle.run (adversary.chooseInput parameter circuit auxiliary) oracle)
+    let request := [false, true] ++ SimulatorProtocol.affine selected.1 ++
+      SimulatorProtocol.output (scheme.function scalar selected.1)
+    let memory := { initial.memory with bits := Function.update (Function.update initial.memory.bits 0 request) 3 [] }
+    let (encoded, updated, _) ← OptionT.mk (machine.run machine.secondFuel ⟨0, memory⟩ chosen)
+    let labels ← OptionT.mk (PMF.pure (SimulatorProtocol.words 128 508 (encoded.memory.bits 3)))
+    let (decision, _) ← liftM (LazyOracle.run
+      (adversary.decide parameter circuit labels auxiliary selected.2) updated)
+    pure decision
+  experiment.run.map (fun result => result.getD false)
+
+end LazySimulatorProtocol
+
+/-- One closed simulator uses the fixed oracle under the constant shared allowance. -/
+def OracleAdaptivePrivacy [FieldCertificate]
+    {FixedIndex EncIndex Coins Randomness Public Key Oracle : Type}
+    [Fintype FixedIndex] [Fintype EncIndex] [DecidableEq FixedIndex] [DecidableEq EncIndex]
+    (scheme : GarbledCircuit NonZeroScalar AffineInput (Option Point) Randomness Public
+      Key LamportSignature Oracle) (encoding : Encoding Public) (bytes : Nat)
+    (coins : Nat → PMF Coins) {budget : Nat}
+    (garble : Nat → NonZeroScalar → Coins →
+      OracleProgram (publicOracleSpec FixedIndex EncIndex) (Public × Key) budget) : Prop :=
+  ∃ simulator : BoundedMachine.Simulator, ∀ machine : BoundedMachine.Adversary,
+    ∀ parameter scalar,
+      let adversary := machineAdversary encoding machine
+      WorkPerAdvantage 100 (machine.steps + 1)
+        (advantage (lazyRealGame coins garble scheme.encode adversary parameter scalar ())
+          (LazySimulatorProtocol.idealGame scheme encoding bytes simulator adversary parameter scalar ()))
 
 end Kriterion.GarbledCircuit
