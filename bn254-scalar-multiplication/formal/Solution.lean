@@ -30,49 +30,60 @@ structure Solution where
   EncIndex : Type
   fixedFinite : Finite FixedIndex
   encFinite : Finite EncIndex
-  /-- The tape contains private coins and the public oracle tables. -/
+  /-- The private coins do not contain the public oracle. -/
   Randomness : Type
   randomnessFinite : Finite Randomness
   randomness : Randomness
   /-- The public value contains every construction-dependent field used by evaluation. -/
   Public : Type
   EncodingKey : Type
-  State : Type
   /-- The decoder recovers the complete public value. This rule defines the scored byte format. -/
   encoding : Encoding Public
   ciphertextBytes : Nat
-  /-- Evaluation receives exactly the public permutations and hash used in the real game. -/
-  evaluationOracle : Randomness → Cryptography.PublicOracle FixedIndex EncIndex
-  /-- The joint oracle law is uniform. The proof cannot substitute biased tables. -/
-  oracleUniform : @Cryptography.Assumptions.StandardAssumptions FixedIndex EncIndex Randomness
-    (@Fintype.ofFinite _ fixedFinite) (@Fintype.ofFinite _ encFinite)
-    (@Fintype.ofFinite _ randomnessFinite) randomness evaluationOracle
+  /-- These bounds count every query on every construction path. -/
+  garbleQueries : Nat
+  evaluateQueries : Nat
   /-- The algorithms implement `preliminaries.tex`, `def:garbling-scheme`.
   The evaluator receives its input separately from the 508 Lamport blocks. -/
   scheme : (field : BN254.FieldCertificate) → @BN254.GroupCertificate field →
     GarbledCircuit BN254.NonZeroScalar BN254.AffineInput (Option (@BN254.Point field))
-      Randomness Public EncodingKey GarbledCircuit.LamportSignature
+      (Randomness × Cryptography.PublicOracle FixedIndex EncIndex) Public EncodingKey GarbledCircuit.LamportSignature
       (Cryptography.PublicOracle FixedIndex EncIndex)
+  /-- These programs receive oracle answers only through query nodes. -/
+  garbleProgram : (field : BN254.FieldCertificate) → @BN254.GroupCertificate field →
+    Nat → BN254.NonZeroScalar → Randomness →
+      Cryptography.QueryProgram (Cryptography.publicOracleSpec FixedIndex EncIndex)
+        (Public × EncodingKey) garbleQueries
+  evaluateProgram : (field : BN254.FieldCertificate) → @BN254.GroupCertificate field →
+    Public → BN254.AffineInput → GarbledCircuit.LamportSignature →
+      Cryptography.QueryProgram (Cryptography.publicOracleSpec FixedIndex EncIndex)
+        (Option (Option (@BN254.Point field))) evaluateQueries
+  /-- The proof view agrees with the programs for every complete oracle. -/
+  garbleProgramCorrect : ∀ field group parameter scalar coins oracle,
+    (garbleProgram field group parameter scalar coins).eval (Cryptography.publicAnswer oracle) =
+      (scheme field group).garble parameter scalar (coins, oracle)
+  evaluateProgramCorrect : ∀ field group circuit input labels oracle,
+    (evaluateProgram field group circuit input labels).eval (Cryptography.publicAnswer oracle) =
+      (scheme field group).evaluate oracle circuit input labels
   /-- Every generated circuit has the same byte layout. This property does not specify a gate graph. -/
   ciphertextSize : ∀ field group parameter scalar tape,
     (encoding.encode ((scheme field group).garble parameter scalar tape).1).length = ciphertextBytes
   /-- Encoding returns only the selected blocks. See `preliminaries.tex`, `eq:lampsig-sig`. -/
   lamportCompatible : ∀ field group, GarbledCircuit.LamportCompatibility (scheme field group) affineLamportBits
-  /-- The ideal handler must satisfy `OracleSimulation` below. It cannot choose another query interface. -/
-  idealOracle : Cryptography.OracleHandler (Cryptography.publicOracleSpec FixedIndex EncIndex) State
-  idealView : State → Cryptography.PublicOracle FixedIndex EncIndex
   /-- The target rejects off-curve inputs. See `gc_argomac_new.tex`, `fig:garbled_c_with_cm`. -/
   functionCorrect : ∀ field group scalar input, (scheme field group).function scalar input =
     @checkedScalarMultiplication field group scalar.value input
   /-- Correctness covers every input and tape, including rejection. See `def:garbling-scheme`. -/
-  perfectCorrectness : ∀ field group, GarbledCircuit.PerfectCorrectness (scheme field group) evaluationOracle
+  perfectCorrectness : ∀ field group, GarbledCircuit.PerfectCorrectness (scheme field group) Prod.snd
   /-- The same machine serves every adversary and scalar within the fixed budget. -/
   adaptivePrivacy : ∀ (field : BN254.FieldCertificate) (group : @BN254.GroupCertificate field),
     letI := field
     letI := @Fintype.ofFinite FixedIndex fixedFinite
     letI := @Fintype.ofFinite EncIndex encFinite
-    GarbledCircuit.AdaptivePrivacy (Aux := Unit) (scheme field group) encoding ciphertextBytes
+    letI := Classical.decEq FixedIndex
+    letI := Classical.decEq EncIndex
+    GarbledCircuit.OracleAdaptivePrivacy (scheme field group) encoding ciphertextBytes
       (@uniformRandomTape Randomness (@Fintype.ofFinite Randomness randomnessFinite) randomness)
-      (Cryptography.publicHandler evaluationOracle) idealOracle idealView
+      (fun parameter scalar coins => (garbleProgram field group parameter scalar coins).toOracleProgram)
 
 end Kriterion

@@ -16,7 +16,7 @@ rev = "v4.33.1"
 [[lean_lib]]
 name = "Kriterion"
 srcDir = "formal"
-roots = ["BN254", "Benchmark", "Cryptography.Assumptions", "Cryptography.BoundedMachine", "Cryptography.Primitives", "Cryptography.Probability", "Cryptography.RandomOracle", "Cryptography.Permutation", "Encoding", "GarbledCircuit", "RandomizedEncoding", "ScalarMultiplication", "Security.AdaptivePrivacy", "Security.Correctness", "Solution"]
+roots = ["BN254", "Benchmark", "Cryptography.Assumptions", "Cryptography.BoundedMachine", "Cryptography.OperationalOracle", "Cryptography.LazyOracle", "Cryptography.Primitives", "Cryptography.Probability", "Cryptography.RandomOracle", "Cryptography.Permutation", "Encoding", "GarbledCircuit", "RandomizedEncoding", "ScalarMultiplication", "Security.AdaptivePrivacy", "Security.Correctness", "Solution"]
 
 [[lean_lib]]
 name = "Tests"

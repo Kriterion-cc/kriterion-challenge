@@ -5,10 +5,12 @@ import Lean
 example (solution : Kriterion.Solution)
     (field : Kriterion.BN254.FieldCertificate)
     (group : @Kriterion.BN254.GroupCertificate field) (parameter : Nat)
-    (scalar : Kriterion.BN254.NonZeroScalar) (tape : solution.Randomness) :
-    (solution.encoding.encode ((solution.scheme field group).garble parameter scalar tape).1).length =
-      Kriterion.Benchmark.ciphertextBytes solution :=
-  solution.ciphertextSize field group parameter scalar tape
+    (scalar : Kriterion.BN254.NonZeroScalar) (tape : solution.Randomness × Kriterion.Cryptography.PublicOracle solution.FixedIndex solution.EncIndex) :
+    (solution.encoding.encode ((solution.garbleProgram field group parameter scalar tape.1).eval
+      (Kriterion.Cryptography.publicAnswer tape.2)).1).length =
+      Kriterion.Benchmark.ciphertextBytes solution := by
+  rw [solution.garbleProgramCorrect]
+  exact solution.ciphertextSize field group parameter scalar tape
 
 example (solution : Kriterion.Solution) (circuit : solution.Public) :
     solution.encoding.decode (solution.encoding.encode circuit) = some (circuit, []) := by
@@ -151,12 +153,6 @@ example : readPoint
   intro impossible
   exact False.elim ((by decide : (1 : Word) ≠ 0) impossible)
 
--- The next request cannot reset an exhausted budget.
-example (machine : Machine) (request : List Bool) (state : State)
-    (exhausted : state.spent = budget state.queries) :
-    respond machine request state = PMF.pure none := by
-  simp [respond, exhausted, run, PMF.pure_map]
-
 -- The parser rejects short replies and reads each byte in little-endian order.
 example : words 8 1 [true] = none := by decide
 example : (words 8 1 [true, false, true, false, false, false, false, false]).map
@@ -184,10 +180,10 @@ example (solution : Kriterion.Solution) (field : Kriterion.BN254.FieldCertificat
     (((solution.scheme field group).encode key input).toList).length = 508 := by simp
 
 -- The real handler exposes the evaluator's inverse permutation and preserves its tape.
-example (solution : Kriterion.Solution) (tape : solution.Randomness)
+example (solution : Kriterion.Solution) (tape : solution.Randomness × Kriterion.Cryptography.PublicOracle solution.FixedIndex solution.EncIndex)
     (index : solution.FixedIndex) (input : Kriterion.Cryptography.Block) :
-    Kriterion.Cryptography.publicHandler solution.evaluationOracle
-      (.fixedInverse index ((solution.evaluationOracle tape).1.permutation index input)) tape =
+    Kriterion.Cryptography.publicHandler (Prod.snd : solution.Randomness × Kriterion.Cryptography.PublicOracle solution.FixedIndex solution.EncIndex → _)
+      (.fixedInverse index (tape.2.1.permutation index input)) tape =
       (input, tape) := by
   simp only [Kriterion.Cryptography.publicHandler, Kriterion.Cryptography.publicAnswer,
     Equiv.symm_apply_apply]
@@ -198,16 +194,152 @@ private theorem originInvalid : Kriterion.BN254.validate ⟨0, 0⟩ = false := b
 -- Correct evaluation rejects the off-curve origin for every scalar and tape.
 example (solution : Kriterion.Solution) (field : Kriterion.BN254.FieldCertificate)
     (group : @Kriterion.BN254.GroupCertificate field) (scalar : Kriterion.BN254.NonZeroScalar)
-    (tape : solution.Randomness) :
+    (tape : solution.Randomness × Kriterion.Cryptography.PublicOracle solution.FixedIndex solution.EncIndex) :
     let scheme := solution.scheme field group
-    let circuit := scheme.garble 100 scalar tape
-    scheme.evaluate (solution.evaluationOracle tape) circuit.1 ⟨0, 0⟩
-      (scheme.encode circuit.2 ⟨0, 0⟩) = some none := by
+    let circuit := (solution.garbleProgram field group 100 scalar tape.1).eval
+      (Kriterion.Cryptography.publicAnswer tape.2)
+    (solution.evaluateProgram field group circuit.1 ⟨0, 0⟩
+      (scheme.encode circuit.2 ⟨0, 0⟩)).eval (Kriterion.Cryptography.publicAnswer tape.2) = some none := by
   letI := field
   letI := group
   dsimp only
-  rw [solution.perfectCorrectness field group 100 scalar tape ⟨0, 0⟩, solution.functionCorrect]
+  rw [solution.garbleProgramCorrect, solution.evaluateProgramCorrect,
+    solution.perfectCorrectness field group 100 scalar tape ⟨0, 0⟩, solution.functionCorrect]
   simp [Kriterion.checkedScalarMultiplication, Kriterion.BN254.decodePoint, originInvalid]
+
+namespace MachineAdversaryTests
+open Kriterion Kriterion.Cryptography Kriterion.Cryptography.BoundedMachine
+
+private def haltMachine : Adversary := ⟨0, #v[.compute .halt], by decide, 1, 1⟩
+private def query : Adversary := ⟨1, #v[.query 4 0 0 0 1 1, .compute .halt], by decide, 2, 2⟩
+private def handler : OracleHandler (publicOracleSpec Empty Empty) Unit :=
+  fun request state => match request with
+  | .hash _ => ((0, 0), state)
+  | .fixedForward index _ | .fixedInverse index _ => nomatch index
+  | .encForward index _ | .encInverse index _ => nomatch index
+
+example [BN254.FieldCertificate] :
+    ((haltMachine.program 0 ⟨0, {}⟩).run handler ()).map Prod.fst = PMF.pure none := by
+  simp [Adversary.program, OracleProgram.run_pure, PMF.pure_map]
+
+set_option backward.isDefEq.respectTransparency false in
+example [BN254.FieldCertificate] :
+    (haltMachine.program 1 ⟨0, {}⟩).run handler () = PMF.pure (some (⟨0, {}⟩ : Configuration 1), ()) := by
+  simp [Adversary.program, Adversary.arithmetic, haltMachine, step,
+    OracleProgram.run_sample, OracleProgram.run_pure, PMF.pure_bind, PMF.pure_map]
+
+example [BN254.FieldCertificate] :
+    ((query.program 1 ⟨0, {}⟩).run handler ()).map Prod.fst = PMF.pure none := by
+  change ((OracleProgram.query (oracle := publicOracleSpec Empty Empty) (budget := 0) (.hash 0)
+    (fun _ => OracleProgram.pure (PMF.pure (none : Option (Configuration 2))))).run handler ()).map Prod.fst = _
+  simp only [OracleProgram.run_query, OracleProgram.run_pure, PMF.pure_map]
+  rfl
+
+end MachineAdversaryTests
+
+namespace Kriterion.LazyOracleTests
+open Cryptography Cryptography.LazyOracle ArgoMAC.Security.OperationalOracle
+
+example (state : SparsePermutation (2 ^ 128)) (input : Block)
+    (answer : Fin (2 ^ 128) × SparsePermutation (2 ^ 128))
+    (member : answer ∈ (state.forward input.toFin).distribution.support) :
+    answer.2.forward input.toFin = Draw.pure (answer.1, answer.2) :=
+  lookup_forward _ _ _ (forward_lookup _ _ _ member)
+
+example (state : SparsePermutation (2 ^ 128)) (input : Block)
+    (answer : Fin (2 ^ 128) × SparsePermutation (2 ^ 128))
+    (member : answer ∈ (state.forward input.toFin).distribution.support) :
+    answer.2.inverse answer.1 = Draw.pure (input.toFin, answer.2) := by
+  rw [SparsePermutation.inverse_reverse_forward,
+    lookup_forward _ _ _ (lookup_inverse _ _ _ (forward_lookup _ _ _ member))]
+  rfl
+
+example : ((permutationProgram (.empty 2) 0 1).bind
+    (fun state => permutationProgram state 0 0)) = none := by decide
+
+example : ((permutationProgram (.empty 2) 0 1).bind
+    (fun state => permutationProgram state 1 1)) = none := by decide
+
+example : ((program (.hash 0) (0, 0) (empty : State Empty Empty)).bind
+    (program (.hash 1) (0, 0))).isSome = true := by
+  have distinct : ((1 : BN254.BaseField) == 0) = false := by decide
+  simp [program, empty, HashTable.program, List.lookup, distinct]
+
+example : ((program (.hash 0) (0, 0) (empty : State Empty Empty)).bind
+    (program (.hash 0) (1, 1))) = none := by
+  simp [program, empty, HashTable.program, List.lookup]
+
+end Kriterion.LazyOracleTests
+
+namespace HashPadRegression
+open Kriterion Kriterion.Cryptography
+
+-- The reported entry uses this recurrence at ed8f1afaf80641fc609ec4c2da5617f2a7cb2db6.
+private def hashPadPrefix (table : BN254.BaseField → Block × Block) : Nat → Block × Block
+  | 0 => (0, 0)
+  | n + 1 => let pad := hashPadPrefix table n; let value := table n
+    (pad.1 ^^^ value.1, pad.2 ^^^ value.2)
+
+-- Each query node replaces one table read in the reported recurrence.
+private def program : (n : Nat) → QueryProgram (publicOracleSpec Empty Empty) (Block × Block) n
+  | 0 => .pure (0, 0)
+  | n + 1 => .query (.hash n) fun value =>
+      (program n).map fun pad => (pad.1 ^^^ value.1, pad.2 ^^^ value.2)
+
+private def queriesUsed {oracle : OracleSpec.{0, 0}} {Result : Type}
+    (answer : ∀ q, oracle.Answer q) : {budget : Nat} → QueryProgram oracle Result budget → Nat
+  | _, .pure _ => 0
+  | _, .query request next => queriesUsed answer (next (answer request)) + 1
+
+private theorem queriesUsed_le {oracle : OracleSpec.{0, 0}} {Result : Type}
+    (answer : ∀ q, oracle.Answer q) {budget : Nat} (computation : QueryProgram oracle Result budget) :
+    queriesUsed answer computation ≤ budget := by
+  induction computation with
+  | pure => exact Nat.zero_le _
+  | query request next ih => exact Nat.add_le_add_right (ih (answer request)) 1
+
+private theorem queriesUsed_map {oracle : OracleSpec.{0, 0}} {First Second : Type}
+    (answer : ∀ q, oracle.Answer q) (f : First → Second) {budget : Nat}
+    (computation : QueryProgram oracle First budget) :
+    queriesUsed answer (computation.map f) = queriesUsed answer computation := by
+  induction computation with
+  | pure => rfl
+  | query request next ih => exact congrArg (· + 1) (ih (answer request))
+
+-- The query program returns the same pad for every oracle and prefix length.
+example (oracle : PublicOracle Empty Empty) (n : Nat) :
+    (program n).eval (publicAnswer oracle) = hashPadPrefix oracle.2.2 n := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      simp only [program, QueryProgram.eval, QueryProgram.eval_map, publicAnswer,
+        hashPadPrefix, ih]
+      rfl
+
+private theorem program_queries (answer : ∀ q : PublicQuery Empty Empty, q.Answer) (n : Nat) :
+    queriesUsed answer (program n) = n := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp only [program, queriesUsed, queriesUsed_map, ih]
+
+-- The exact reported prefix exceeds both baseline query limits.
+example (answer : ∀ q : PublicQuery Empty Empty, q.Answer) :
+    ¬ queriesUsed answer (program (2 ^ 101)) ≤ 1759967 ∧
+    ¬ queriesUsed answer (program (2 ^ 101)) ≤ 1055879 := by
+  rw [program_queries]
+  constructor <;> norm_num
+
+-- No indexed program with either limit can execute the same number of queries.
+example {budget : Nat} (bounded : budget ≤ 1759967)
+    (answer : ∀ q : PublicQuery Empty Empty, q.Answer)
+    (computation : QueryProgram (publicOracleSpec Empty Empty) (Block × Block) budget) :
+    queriesUsed answer computation ≠ queriesUsed answer (program (2 ^ 101)) := by
+  have limit := queriesUsed_le answer computation
+  rw [program_queries]
+  have large : 1759967 < 2 ^ 101 := by norm_num
+  omega
+
+end HashPadRegression
 
 -- The shared library must not introduce an unproved assumption.
 run_cmd do
