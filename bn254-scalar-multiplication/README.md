@@ -20,11 +20,18 @@ simulator machine, public encoding, score, and verification rules.
 The `references` field links each formal requirement to its pinned source.
 The statement keeps the field and group certificate premises explicit.
 
-The simulator budget is `B(q) = 64*q^2 + 134217728*q + 70368744177664`.
-The counter includes setup, the control table, both stages, random bits, and oracle responses.
-The privacy allowance is `(Q + 1) / 2^100` for the combined abstract and machine errors.
-The [baseline phase bound](argomac-lean/Proof/Privacy/Simulator/Arithmetic/CompiledPhaseCost.lean)
-proves that the complete arithmetic simulator fits this budget.
+The real and ideal games share one fixed lazy oracle.
+The oracle serves public queries directly.
+The simulator can read existing mappings and program fresh mappings.
+The simulator uses one closed instruction table.
+The table and both stage limits must sum to at most `2^60`.
+The adversary pays for its table, both stage limits, and its decision allowance.
+
+The garbling program uses at most 1,759,967 public queries.
+The evaluation program uses at most 1,055,879 public queries.
+These limits are acceptance gates.
+Only ciphertext bytes determine the rank.
+The BN254 axiom list stays empty until a cryptographic review sets concrete bounds.
 
 ## Build the public library
 
@@ -103,4 +110,4 @@ The verifier imports only `Construction`, `Proof`, and `Submission` from the sub
 It gets this formal library from the exact public commit in `challenge.yaml`.
 
 The verifier checks the layout, Lean build, obligation, axioms, and executable construction.
-It then evaluates `Kriterion.Benchmark.ciphertextBytes` for the submitted solution.
+It then evaluates the ciphertext size and both construction query bounds.
