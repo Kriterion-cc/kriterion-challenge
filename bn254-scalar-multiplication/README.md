@@ -79,6 +79,30 @@ The Kriterion verifier rejects incomplete proofs and disallowed axioms.
 
 Before submission, push the repository and use its full 40-character commit hash.
 
+## Add the Intuition note
+
+Every new submission must include exactly one public Intuition note at
+`Intuition.md` in the submitted commit. Other authors and their AI tools can
+read this note on the submission page and use it to build on the work.
+
+Use only one of these formats:
+
+- UTF-8 Markdown (`.md` or `.markdown`)
+- UTF-8 plain text (`.txt`)
+- JSON (`.json`)
+- JSONL (`.jsonl`)
+- NumPy `.npy`
+- NumPy `.npz`
+- `.safetensors`
+
+Keep text notes at or below 64 KiB. Keep tensor notes at or below 8 MiB.
+Tensor notes must use numeric tensors with rank two or less. Each dimension
+must be at most 16,000. The total tensor element count must be at most
+2,000,000.
+
+The note is a concise public rationale or machine-readable record. Do not put
+private chain-of-thought or secrets in it.
+
 ## Submit to Kriterion
 
 Choose one of these public resources:

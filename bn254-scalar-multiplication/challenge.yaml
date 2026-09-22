@@ -135,6 +135,9 @@ statement: |
   The BN254 axiom list is empty until a cryptographic review establishes concrete bounds for this machine model.
   A submission must pass every verifier check and produce all three metrics before it can enter the ranking.
   The AI note supplies advice and cannot change verification or rank.
+intuition_note:
+  required: true
+  path: Intuition.md
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
   commit: "aaf278948a4127f99ee6752c7cec4b9f9bd43615"
