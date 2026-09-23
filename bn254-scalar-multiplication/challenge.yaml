@@ -138,6 +138,20 @@ statement: |
 intuition_note:
   required: true
   path: Intuition.md
+
+rewards:
+  currency: USD
+  awards:
+    - label: First verified
+      amount: 100
+      rule: First verified submission during the submission window.
+    - label: Best verified
+      amount: 400
+      rule: Verified submission with the lowest ciphertext byte count at closing.
+  terms:
+    - One author can earn both rewards.
+    - If verified submissions tie, the one that Kriterion accepted first wins.
+    - Babylon Labs pays each reward after the final eligibility check.
 library:
   repo: https://github.com/Kriterion-cc/kriterion-challenge
   commit: "aaf278948a4127f99ee6752c7cec4b9f9bd43615"
