@@ -41,3 +41,7 @@ chmod +x kriterion
 
 Set `KRITERION_TOKEN` to the token from the Kriterion Settings page.
 The CLI uses `https://api.kriterion.cc` by default.
+
+## License
+
+This repository is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
